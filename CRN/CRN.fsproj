@@ -6,7 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Program.fs"/>
+        <Compile Include="Program.fs" />
+        <None Include="Scripts\FParsecTestsJohannes.fsx" />
     </ItemGroup>
 
 </Project>
