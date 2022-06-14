@@ -37,8 +37,13 @@ type Crn = {
     Statements : Statements list
 }
 
-let ws : Parser<_, unit> = skipMany (skipChar ' ')
+// Basic parsers
+let ws : Parser<_, unit> = spaces
+let token p = p .>> ws 
+let symbol s = pstring s |> token
+let skipComma = symbol "," |> skipMany
 
+// Literal parsers
 let intOrFloatLiteral =
     numberLiteral (NumberLiteralOptions.DefaultFloat ||| NumberLiteralOptions.DefaultInteger) "number"
     |>> fun n ->
@@ -46,17 +51,46 @@ let intOrFloatLiteral =
             else Literal.FloatLiteral (float n.String)
     .>> ws
 
-let speciesLiteral = many1Chars (letter <|> digit) |>> Literal.SpeciesLiteral .>> ws
+let speciesLiteral = many1Chars (letter <|> digit) |>> Literal.SpeciesLiteral |> token
 
-let statements : Parser<_, unit> = spaces // TODO
+// Concentration statement parser
+let concentration =
+    symbol "conc["
+    >>. speciesLiteral
+    .>> symbol ","
+    .>>. speciesLiteral
+    .>> symbol "]"
+    |>> Statements.ConcentrationStmt
+    
+// Step parser
+let rec ifGT () =
+    symbol "ifGT["
+    >>. symbol "{"
+    >>. many command
+    .>> symbol "}"
+    .>> symbol "]"
+    |>> ConditionalStmt.IfGreaterThan
 
-let program = skipString "crn"
-              >>. spaces
-              >>. skipChar '='
-              >>. spaces
-              >>. skipChar '{'
-              >>. spaces
-              >>. statements
-              >>. spaces
-              >>. skipString "};" 
-let programFull = spaces >>. program .>> spaces .>> eof
+and conditionalStmt = ifGT() |>> Command.ConditionalStmt
+and moduleStmt = ifGT() |>> Command.ConditionalStmt // TODO
+    
+and command = (conditionalStmt <|> moduleStmt) .>> skipComma
+    
+let step =
+    symbol "step["
+    >>. symbol "{"
+    >>. many command
+    .>> symbol "}"
+    .>> symbol "]"
+    |>> Statements.StepStmt
+    
+let statement = (concentration <|> step) .>> skipComma
+
+// Full program parser
+let program = symbol "crn"
+              >>. symbol "="
+              >>. symbol "{"
+              >>. many statement
+              .>> symbol "};"
+              
+let programFull = ws >>. program .>> ws .>> eof
