@@ -41,7 +41,7 @@ type Crn = {
 let ws : Parser<_, unit> = spaces
 let token p = p .>> ws
 let symbol s = pstring s |> token
-let skipComma = symbol "," |> skipMany
+let skipComma = symbol "," |> skipMany // TODO: skipping makes commas not required, useful when last command. They are required when another command follows though.
 
 // Literal parsers
 let intOrFloatLiteral =
@@ -85,9 +85,9 @@ let moduleStmt3SpeciesMaker id stmt =
 let load = moduleStmt2SpeciesMaker "ld" ModuleStmt.Load
 let sqrt = moduleStmt2SpeciesMaker "sqrt" ModuleStmt.SquareRoot
 let cmp = moduleStmt2SpeciesMaker "cmp" ModuleStmt.Compare
-let add = moduleStmt3SpeciesMaker "sub" ModuleStmt.Add
+let add = moduleStmt3SpeciesMaker "add" ModuleStmt.Add
 let sub = moduleStmt3SpeciesMaker "sub" ModuleStmt.Subtract
-let mul = moduleStmt3SpeciesMaker "sub" ModuleStmt.Multiply
+let mul = moduleStmt3SpeciesMaker "mul" ModuleStmt.Multiply
 let div = moduleStmt3SpeciesMaker "div" ModuleStmt.Divide
 
 let moduleStmt = choice [ load; sqrt; cmp; add; sub; mul; div ] |>> Command.ModuleStmt
