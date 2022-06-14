@@ -63,7 +63,7 @@ let concentration =
     |>> Statements.ConcentrationStmt
     
 // Module statement parsers
-let moduleStmt2Species id stmt =
+let moduleStmt2SpeciesMaker id stmt =
     symbol $"{id}["
     >>. speciesLiteral
     .>> symbol ","
@@ -71,7 +71,7 @@ let moduleStmt2Species id stmt =
     .>> symbol "]"
     |>> stmt
 
-let moduleStmt3Species id stmt =
+let moduleStmt3SpeciesMaker id stmt =
     symbol $"{id}["
     >>. speciesLiteral
     .>> symbol ","
@@ -82,20 +82,37 @@ let moduleStmt3Species id stmt =
     |>> fun ((a, b), c) -> a, b, c
     |>> stmt
     
-let load = moduleStmt2Species "ld" ModuleStmt.Load
-let sqrt = moduleStmt2Species "sqrt" ModuleStmt.SquareRoot
-let cmp = moduleStmt2Species "cmp" ModuleStmt.Compare
-let add = moduleStmt3Species "sub" ModuleStmt.Add
-let sub = moduleStmt3Species "sub" ModuleStmt.Subtract
-let mul = moduleStmt3Species "sub" ModuleStmt.Multiply
-let div = moduleStmt3Species "div" ModuleStmt.Divide
+let load = moduleStmt2SpeciesMaker "ld" ModuleStmt.Load
+let sqrt = moduleStmt2SpeciesMaker "sqrt" ModuleStmt.SquareRoot
+let cmp = moduleStmt2SpeciesMaker "cmp" ModuleStmt.Compare
+let add = moduleStmt3SpeciesMaker "sub" ModuleStmt.Add
+let sub = moduleStmt3SpeciesMaker "sub" ModuleStmt.Subtract
+let mul = moduleStmt3SpeciesMaker "sub" ModuleStmt.Multiply
+let div = moduleStmt3SpeciesMaker "div" ModuleStmt.Divide
 
-//and conditionalStmt = ifGT() |>> Command.ConditionalStmt
-let moduleStmt = choice [ load; sqrt; cmp; add; sub; mul; div ]
-                 |>> Command.ModuleStmt
+let moduleStmt = choice [ load; sqrt; cmp; add; sub; mul; div ] |>> Command.ModuleStmt
 
-let command = moduleStmt .>> skipComma
+// Conditional statement parsers
+let rec conditionalStmtMaker id stmt =
+    symbol $"{id}["
+    >>. symbol "{"
+    >>. many command
+    .>> symbol "}"
+    .>> symbol "]"
+    |>> stmt
     
+and ifGT = conditionalStmtMaker "ifGT" ConditionalStmt.IfGreaterThan
+and ifGE = conditionalStmtMaker "ifGE" ConditionalStmt.IfGreaterThanOrEquals
+and ifEQ = conditionalStmtMaker "ifEQ" ConditionalStmt.IfEquals
+and ifLT = conditionalStmtMaker "ifLT" ConditionalStmt.IfLesserThan
+and ifLE = conditionalStmtMaker "ifLE" ConditionalStmt.IfLesserThanOrEquals
+
+and conditionalStmt = choice [ ifGT; ifGE; ifEQ; ifLT; ifLE ] |>> Command.ConditionalStmt
+
+// Command parser
+and command = (moduleStmt <|> conditionalStmt) .>> skipComma
+
+// Step parser
 let step =
     symbol "step["
     >>. symbol "{"
@@ -104,6 +121,7 @@ let step =
     .>> symbol "]"
     |>> Statements.StepStmt
     
+// Statement parser
 let statement = (concentration <|> step) .>> skipComma
 
 // Full program parser
@@ -112,5 +130,6 @@ let program = symbol "crn"
               >>. symbol "{"
               >>. many statement
               .>> symbol "};"
+              |>> fun p -> { Statements = p }
               
 let programFull = ws >>. program .>> ws .>> eof
