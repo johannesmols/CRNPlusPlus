@@ -20,10 +20,11 @@ crn = {
 
 let input2 = """
 crn = {
-    conc[a, a0],,, , ,conc[b, b0],, ,,
+    conc[a, 3],,, , ,conc[b, 4],, ,,
     step[ {
-        ifGT[ { sub[a, b, a] } ],
-        ifGT[ { sub[a, b, a] } ],
+        sub[a, b, a], cmp[ 3sdf, ldöf],
+        ,,
+        div[la, sd, kljdsf]
     }  ]
 };
 """
@@ -33,7 +34,7 @@ let parse input =
     | Success(res, _, _) -> Result.Ok res
     | Failure(err, _, _) -> Result.Error err
     
-let res = parse input2
+let res = parse input
 
 match res with
 | Result.Ok res -> printfn $"Success: {res}"

@@ -1,4 +1,4 @@
-﻿module CRN.Core
+module CRN.Core
 
 open FParsec
 
@@ -39,7 +39,7 @@ type Crn = {
 
 // Basic parsers
 let ws : Parser<_, unit> = spaces
-let token p = p .>> ws 
+let token p = p .>> ws
 let symbol s = pstring s |> token
 let skipComma = symbol "," |> skipMany
 
@@ -58,23 +58,43 @@ let concentration =
     symbol "conc["
     >>. speciesLiteral
     .>> symbol ","
-    .>>. speciesLiteral
+    .>>. (intOrFloatLiteral <|> speciesLiteral)
     .>> symbol "]"
     |>> Statements.ConcentrationStmt
     
-// Step parser
-let rec ifGT () =
-    symbol "ifGT["
-    >>. symbol "{"
-    >>. many command
-    .>> symbol "}"
+// Module statement parsers
+let moduleStmt2Species id stmt =
+    symbol $"{id}["
+    >>. speciesLiteral
+    .>> symbol ","
+    .>>. speciesLiteral
     .>> symbol "]"
-    |>> ConditionalStmt.IfGreaterThan
+    |>> stmt
 
-and conditionalStmt = ifGT() |>> Command.ConditionalStmt
-and moduleStmt = ifGT() |>> Command.ConditionalStmt // TODO
+let moduleStmt3Species id stmt =
+    symbol $"{id}["
+    >>. speciesLiteral
+    .>> symbol ","
+    .>>. speciesLiteral
+    .>> symbol ","
+    .>>. speciesLiteral
+    .>> symbol "]"
+    |>> fun ((a, b), c) -> a, b, c
+    |>> stmt
     
-and command = (conditionalStmt <|> moduleStmt) .>> skipComma
+let load = moduleStmt2Species "ld" ModuleStmt.Load
+let sqrt = moduleStmt2Species "sqrt" ModuleStmt.SquareRoot
+let cmp = moduleStmt2Species "cmp" ModuleStmt.Compare
+let add = moduleStmt3Species "sub" ModuleStmt.Add
+let sub = moduleStmt3Species "sub" ModuleStmt.Subtract
+let mul = moduleStmt3Species "sub" ModuleStmt.Multiply
+let div = moduleStmt3Species "div" ModuleStmt.Divide
+
+//and conditionalStmt = ifGT() |>> Command.ConditionalStmt
+let moduleStmt = choice [ load; sqrt; cmp; add; sub; mul; div ]
+                 |>> Command.ModuleStmt
+
+let command = moduleStmt .>> skipComma
     
 let step =
     symbol "step["
