@@ -6,8 +6,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Library.fsi" />
-        <Compile Include="Library.fs" />
+        <Compile Include="CRNPP\Types.fs" />
+        <Compile Include="CRNPP\SemanticAnalyzer.fsi" />
+        <Compile Include="CRNPP\SemanticAnalyzer.fs" />
+        <Compile Include="CRNPP\Parser.fsi" />
+        <Compile Include="CRNPP\Parser.fs" />
     </ItemGroup>
 
     <ItemGroup>

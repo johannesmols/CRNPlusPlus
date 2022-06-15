@@ -1,4 +1,4 @@
-﻿module CRN.Core
+﻿module CRN.Core.CRNPP.Types
 
 type Literal =
     | SpeciesLiteral of string
@@ -24,12 +24,11 @@ and Command =
     | ConditionalStmt of ConditionalStmt
     | ModuleStmt of ModuleStmt
 
-type Statements =
+type Statement =
     | ConcentrationStmt of Literal * Literal
     | StepStmt of Command list 
 
 type Crn = {
-    Statements : Statements list
+    Statements : Statement list
+    Arguments: string list
 }
-
-val parse : string -> Result<Crn, string>

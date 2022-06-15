@@ -1,7 +1,7 @@
 open System
 open System.IO
 
-open CRN.Core
+open CRN.Core.CRNPP.Parser
 
 [<EntryPoint>]
 let main args =
