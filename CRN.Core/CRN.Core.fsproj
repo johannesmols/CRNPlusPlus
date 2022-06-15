@@ -11,6 +11,7 @@
         <Compile Include="CRNPP\SemanticAnalyzer.fs" />
         <Compile Include="CRNPP\Parser.fsi" />
         <Compile Include="CRNPP\Parser.fs" />
+        <Compile Include="CRNPP\Interpreter.fs" />
     </ItemGroup>
 
     <ItemGroup>
