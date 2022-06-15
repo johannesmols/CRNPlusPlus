@@ -92,8 +92,11 @@ let div = moduleStmt3SpeciesMaker "div" ModuleStmt.Divide
 
 let moduleStmt = choice [ load; sqrt; cmp; add; sub; mul; div ] |>> Command.ModuleStmt
 
+// Command parser, forward created for recursive usage
+let command, commandRef = createParserForwardedToRef<Command, unit>()
+
 // Conditional statement parsers
-let rec conditionalStmtMaker id stmt =
+let conditionalStmtMaker id stmt =
     symbol $"{id}["
     >>. symbol "{"
     >>. many command
@@ -101,16 +104,16 @@ let rec conditionalStmtMaker id stmt =
     .>> symbol "]"
     |>> stmt
     
-and ifGT = conditionalStmtMaker "ifGT" ConditionalStmt.IfGreaterThan
-and ifGE = conditionalStmtMaker "ifGE" ConditionalStmt.IfGreaterThanOrEquals
-and ifEQ = conditionalStmtMaker "ifEQ" ConditionalStmt.IfEquals
-and ifLT = conditionalStmtMaker "ifLT" ConditionalStmt.IfLesserThan
-and ifLE = conditionalStmtMaker "ifLE" ConditionalStmt.IfLesserThanOrEquals
+let ifGT = conditionalStmtMaker "ifGT" ConditionalStmt.IfGreaterThan
+let ifGE = conditionalStmtMaker "ifGE" ConditionalStmt.IfGreaterThanOrEquals
+let ifEQ = conditionalStmtMaker "ifEQ" ConditionalStmt.IfEquals
+let ifLT = conditionalStmtMaker "ifLT" ConditionalStmt.IfLesserThan
+let ifLE = conditionalStmtMaker "ifLE" ConditionalStmt.IfLesserThanOrEquals
 
-and conditionalStmt = choice [ ifGT; ifGE; ifEQ; ifLT; ifLE ] |>> Command.ConditionalStmt
+let conditionalStmt = choice [ ifGT; ifGE; ifEQ; ifLT; ifLE ] |>> Command.ConditionalStmt
 
-// Command parser
-and command = (moduleStmt <|> conditionalStmt) .>> skipComma
+// Command parser, declare actual parser after all necessary parsers in between are defined
+commandRef.Value <- (moduleStmt <|> conditionalStmt) .>> skipComma
 
 // Step parser
 let step =
@@ -133,3 +136,9 @@ let program = symbol "crn"
               |>> fun p -> { Statements = p }
               
 let programFull = ws >>. program .>> ws .>> eof
+
+// Parser for external use
+let parse input =
+    match run programFull input with
+    | Success(res, _, _) -> Result.Ok res
+    | Failure(err, _, _) -> Result.Error err
