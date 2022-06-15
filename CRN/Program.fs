@@ -22,7 +22,7 @@ crn = {
     step[ {
         sub[a, b, a], cmp[ 3sdf, ldöf],
         ,,
-        div[la, sd, kljdsf],
+        div[la, sd, kljdsf]
     }],
     conc[d, 1337],
     step[{

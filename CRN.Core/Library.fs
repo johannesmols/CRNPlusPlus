@@ -112,9 +112,6 @@ let ifLE = conditionalStmtMaker "ifLE" ConditionalStmt.IfLesserThanOrEquals
 
 let conditionalStmt = choice [ ifGT; ifGE; ifEQ; ifLT; ifLE ] |>> Command.ConditionalStmt
 
-// Command parser, declare actual parser after all necessary parsers in between are defined
-commandRef.Value <- (moduleStmt <|> conditionalStmt)
-
 // Step parser
 let step =
     symbol "step["
@@ -122,6 +119,9 @@ let step =
     >>. many (command .>> (attempt skipComma <|> skipString "}"))
     .>> symbol "]"
     |>> Statements.StepStmt
+    
+// Command parser, declare actual parser after all necessary parsers in between are defined
+commandRef.Value <- (moduleStmt <|> conditionalStmt)
     
 // Statement parser
 let statement = (concentration <|> step)
