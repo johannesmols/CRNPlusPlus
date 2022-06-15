@@ -1,7 +1,5 @@
 open CRN.Core
 
-open FParsec
-
 let input = """
 crn = {
     conc[a, a0],
@@ -18,10 +16,22 @@ crn = {
 };
 """
 
-let parse input =
-    match run programFull input with
-    | Success(res, _, _) -> Result.Ok res
-    | Failure(err, _, _) -> Result.Error err
+let input2 = """
+crn = {
+    conc[a, 3],,, , ,conc[b, 0.4],, ,,
+    step[ {
+        sub[a, b, a], cmp[ 3sdf, ldöf],
+        ,,
+        div[la, sd, kljdsf]
+    }],
+    conc[d, 1337],
+    step[{
+        add[a, b, c],
+        add[c, b, a],
+        ifEQ[{ add[c, b, a] }]
+    }]
+};
+"""
     
 let res = parse input
 
