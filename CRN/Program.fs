@@ -2,8 +2,8 @@ open CRN.Core
 
 let input = """
 crn = {
-    conc[a, a0],
-    conc[b, b0],
+    conc[a, 32],
+    conc[b, 12],
     step[{
         ld[a, atmp],
         ld[b, btmp],

@@ -4,7 +4,6 @@ open FParsec
 
 type Literal =
     | SpeciesLiteral of string
-    | IntLiteral of int
     | FloatLiteral of float
 
 type ModuleStmt =
@@ -24,8 +23,6 @@ type ConditionalStmt =
     | IfLesserThanOrEquals of Command list
     
 and Command =
-    | ArithmeticStmt // no definition ??
-    | ComparisonStmt // no definition ??
     | ConditionalStmt of ConditionalStmt
     | ModuleStmt of ModuleStmt
 
@@ -44,12 +41,7 @@ let symbol s = pstring s |> token
 let skipComma = symbol "," |> skipMany1
 
 // Literal parsers
-let intOrFloatLiteral =
-    numberLiteral (NumberLiteralOptions.DefaultFloat ||| NumberLiteralOptions.DefaultInteger) "number"
-    |>> fun n ->
-            if n.IsInteger then Literal.IntLiteral (int n.String)
-            else Literal.FloatLiteral (float n.String)
-    .>> ws
+let floatLiteral = pfloat |>> Literal.FloatLiteral .>> ws
 
 let speciesLiteral = many1Chars (letter <|> digit) |>> Literal.SpeciesLiteral |> token
 
@@ -58,7 +50,7 @@ let concentration =
     symbol "conc["
     >>. speciesLiteral
     .>> symbol ","
-    .>>. (intOrFloatLiteral <|> speciesLiteral)
+    .>>. floatLiteral
     .>> symbol "]"
     |>> Statements.ConcentrationStmt
     

@@ -2,7 +2,6 @@
 
 type Literal =
     | SpeciesLiteral of string
-    | IntLiteral of int
     | FloatLiteral of float
 
 type ModuleStmt =
@@ -22,8 +21,6 @@ type ConditionalStmt =
     | IfLesserThanOrEquals of Command list
     
 and Command =
-    | ArithmeticStmt // no definition ??
-    | ComparisonStmt // no definition ??
     | ConditionalStmt of ConditionalStmt
     | ModuleStmt of ModuleStmt
 
