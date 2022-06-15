@@ -41,7 +41,7 @@ type Crn = {
 let ws : Parser<_, unit> = spaces
 let token p = p .>> ws
 let symbol s = pstring s |> token
-let skipComma = symbol "," |> skipMany // TODO: skipping makes commas not required, useful when last command. They are required when another command follows though.
+let skipComma = symbol "," |> skipMany1
 
 // Literal parsers
 let intOrFloatLiteral =
@@ -113,26 +113,24 @@ let ifLE = conditionalStmtMaker "ifLE" ConditionalStmt.IfLesserThanOrEquals
 let conditionalStmt = choice [ ifGT; ifGE; ifEQ; ifLT; ifLE ] |>> Command.ConditionalStmt
 
 // Command parser, declare actual parser after all necessary parsers in between are defined
-commandRef.Value <- (moduleStmt <|> conditionalStmt) .>> skipComma
+commandRef.Value <- (moduleStmt <|> conditionalStmt)
 
 // Step parser
 let step =
     symbol "step["
     >>. symbol "{"
-    >>. many command
-    .>> symbol "}"
+    >>. many (command .>> (attempt skipComma <|> skipString "}"))
     .>> symbol "]"
     |>> Statements.StepStmt
     
 // Statement parser
-let statement = (concentration <|> step) .>> skipComma
+let statement = (concentration <|> step)
 
 // Full program parser
 let program = symbol "crn"
               >>. symbol "="
               >>. symbol "{"
-              >>. many statement
-              .>> symbol "};"
+              >>. many (statement .>> (attempt skipComma <|> skipString "};"))
               |>> fun p -> { Statements = p }
               
 let programFull = ws >>. program .>> ws .>> eof
