@@ -1,0 +1,19 @@
+﻿crn = {
+    conc[a, a0 ], conc[b, b0 ],
+    conc[one, 1], conc[zero , 0],
+    step[{
+        cmp[b, zero ]
+    }],
+    step[{
+        ifGE[{
+            sub[a, one, anext ],
+            sub[b, one, bnext]
+        }]
+    }],
+    step[{
+        ifGE[{
+            ld [anext, a ],
+            ld [bnext, b]
+        }]
+    }]
+};

@@ -1,0 +1,12 @@
+﻿crn = {
+    conc[one ,1], conc[n,n0 ],
+    step[{
+        add[z,one,znext ],
+        mul[znext, znext ,zpow],
+        cmp[zpow,n]
+    }],
+    step[{
+        ifLT[{ ld [ znext , z ]}],
+        ifGE[{ ld [z ,out ]}]
+    }]
+};

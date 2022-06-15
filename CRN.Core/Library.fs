@@ -108,7 +108,7 @@ let conditionalStmt = choice [ ifGT; ifGE; ifEQ; ifLT; ifLE ] |>> Command.Condit
 let step =
     symbol "step["
     >>. symbol "{"
-    >>. many (command .>> (attempt skipComma <|> skipString "}"))
+    >>. many (command .>> (attempt skipComma <|> (symbol "}" |>> ignore)))
     .>> symbol "]"
     |>> Statements.StepStmt
     
@@ -122,7 +122,7 @@ let statement = (concentration <|> step)
 let program = symbol "crn"
               >>. symbol "="
               >>. symbol "{"
-              >>. many (statement .>> (attempt skipComma <|> skipString "};"))
+              >>. many (statement .>> (attempt skipComma <|> (symbol "};" |>> ignore)))
               |>> fun p -> { Statements = p }
               
 let programFull = ws >>. program .>> ws .>> eof

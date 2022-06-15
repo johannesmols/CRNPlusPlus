@@ -1,40 +1,27 @@
+open System
+open System.IO
+
 open CRN.Core
 
-let input = """
-crn = {
-    conc[a, 32],
-    conc[b, 12],
-    step[{
-        ld[a, atmp],
-        ld[b, btmp],
-        cmp[a, b]
-    }],
-    step[{
-        ifGT[{ sub[atmp, btmp, a] }],
-        ifLT[{ sub[btmp, atmp, b] }]
-    }]
-};
-"""
-
-let input2 = """
-crn = {
-    conc[a, 3],,, , ,conc[b, 0.4],, ,,
-    step[ {
-        sub[a, b, a], cmp[ 3sdf, ldöf],
-        ,,
-        div[la, sd, kljdsf]
-    }],
-    conc[d, 1337],
-    step[{
-        add[a, b, c],
-        add[c, b, a],
-        ifEQ[{ add[c, b, a] }]
-    }]
-};
-"""
+[<EntryPoint>]
+let main args =
+    if args.Length <> 1 then
+        printfn $"Too many or too little arguments (provided {args.Length}, expected 1)"
+        Environment.Exit 1
     
-let res = parse input
-
-match res with
-| Result.Ok res -> printfn $"Success: {res}"
-| Result.Error err -> printfn $"Failure: {err}"
+    let input_file = args[0]
+    if not(File.Exists input_file) then
+        printfn $"{Environment.CurrentDirectory}"
+        printfn $"Input file '{input_file}' does not exist"
+        Environment.Exit 2
+    
+    try
+        let text = File.ReadAllText input_file
+        match parse text with
+        | Result.Ok res -> printfn $"Success: {res}"
+        | Result.Error err -> printfn $"Failure: {err}"
+    with
+    | e -> printfn $"Exception occurred during parsing: {e.Message}"
+    
+    0
+   
