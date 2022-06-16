@@ -1,7 +1,11 @@
 ﻿module CRN.Core.CRNPP.Interpreter
 
-open System.Runtime.Intrinsics.X86
 open CRN.Core.CRNPP.Types
+
+module Seq =
+  /// Infinitely repeat a sequence of values
+  let repeat items = 
+    seq { while true do yield! items }
 
 type State = {
     Concentrations : Map<string, float>
@@ -10,41 +14,44 @@ type State = {
 
 /// Replace concentration statements where value is another species with actual values from the arguments
 let replaceConcentrationsWithArguments crn (args: Map<string, float>) =
-    { crn with Statements = crn.Statements
-            |> List.map (fun s ->
-                match s with
-                | StepStmt _ -> s
-                | ConcentrationStmt (species, tmp) ->
-                    ConcentrationStmt(species, args[match tmp with
-                                                    | SpeciesLiteral s -> s
-                                                    | _ -> failwith $"Species name was not of type SpeciesLiteral ({species})."]
-                                               |> FloatLiteral)); Arguments = [] }
+    { crn with Arguments = []; Statements = crn.Statements |> List.map (fun s ->
+            match s with
+            | StepStmt _ -> s
+            | ConcentrationStmt(target, value) ->
+                match value with
+                | FloatLiteral _ -> s
+                | SpeciesLiteral s -> ConcentrationStmt(target, args[s] |> FloatLiteral)) }
+    
+// Construct an initial state from the concentration statements in a program
+let constructInitialState crn =
+    { Comparison = 0., 0.; Concentrations = crn.Statements |> List.choose (fun s ->
+        match s with
+        | StepStmt _ -> None
+        | ConcentrationStmt(s, l) ->
+            match s, l with
+            | SpeciesLiteral s, FloatLiteral f -> Some(s, f)
+            | _ -> failwith "Can't construct initial state with concentrations where value is not a float.") |> Map.ofList }
     
 let simulateStep (state: State) (step: Statement) =
+    let performOperator2 state i t op_l op =
+        match i, t with
+        | SpeciesLiteral i, SpeciesLiteral t -> 
+            { state with Concentrations = state.Concentrations.Add(t, op state.Concentrations[i]) }
+        | _ -> failwith $"Attempted to use {op_l} operator with float literals."
+    
+    let performOperator3 state i1 i2 t op_l op =
+        match i1, i2, t with
+        | SpeciesLiteral i1, SpeciesLiteral i2, SpeciesLiteral t -> 
+            { state with Concentrations = state.Concentrations.Add(t, op state.Concentrations[i1] state.Concentrations[i2]) }
+        | _ -> failwith $"Attempted to use {op_l} operator with float literals."
+    
     let moduleStmt (state: State) = function
-        | Load(i, target) ->
-            match i, target with
-            | SpeciesLiteral from, SpeciesLiteral target ->
-                { state with Concentrations = state.Concentrations.Add(target, state.Concentrations[from]) }
-            | _ -> failwith "Attempted to use load module with float literals."
-        | Add(i1, i2, target) ->
-            match i1, i2, target with
-            | SpeciesLiteral i1, SpeciesLiteral i2, SpeciesLiteral t ->
-                { state with Concentrations = state.Concentrations.Add(t, state.Concentrations[i1] + state.Concentrations[i2]) }
-            | _ -> failwith "Attempted to use add module with float literals."
-        | Subtract(i1, i2, target) ->
-            match i1, i2, target with
-            | SpeciesLiteral i1, SpeciesLiteral i2, SpeciesLiteral t ->
-                { state with Concentrations =
-                                let a = state.Concentrations[i1]
-                                let b = state.Concentrations[i2]
-                                match a > b with
-                                | true -> state.Concentrations.Add(t, a - b)
-                                | false -> state.Concentrations.Add(t, 0) }
-            | _ -> failwith "Attempted to use subtract module with float literals."
-        | Multiply(i1, i2, target) -> state
-        | Divide(i1, i2, target) -> state
-        | SquareRoot(i, target) -> state
+        | Load(i, target) -> performOperator2 state i target "ld" id
+        | Add(i1, i2, target) -> performOperator3 state i1 i2 target "add" (+)
+        | Subtract(i1, i2, target) -> performOperator3 state i1 i2 target "sub" (fun a b -> match a > b with | true -> a - b | false -> 0.)
+        | Multiply(i1, i2, target) -> performOperator3 state i1 i2 target "mul" (*)
+        | Divide(i1, i2, target) -> performOperator3 state i1 i2 target "div" (/)
+        | SquareRoot(i, target) -> performOperator2 state i target "sqrt" sqrt
         | Compare(i, target) -> state
     
     let conditionalStmt (state: State) = function
@@ -73,5 +80,16 @@ let interpret crn (args: Map<string, float>) =
         failwith $"Expected {crn.Arguments.Length} arguments, but received {args.Count}."
         
     let crn = replaceConcentrationsWithArguments crn args
+    let state = constructInitialState crn
+    
+    let steps = crn.Statements
+                |> List.filter (fun s -> match s with | StepStmt _ -> true | _ -> false)
+                |> Seq.repeat
+    
+    let states = seq {
+        yield! (state, steps) ||> Seq.scan simulateStep
+    }
+    
+    let first10 = states |> Seq.take 10
     
     true

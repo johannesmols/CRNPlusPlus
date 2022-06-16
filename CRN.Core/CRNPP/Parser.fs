@@ -18,7 +18,8 @@ let speciesLiteral = many1Chars (asciiLetter <|> digit) |>> Literal.SpeciesLiter
 
 // Concentration statement parser
 let concentration =
-    symbol "conc["
+    symbol "conc"
+    >>. symbol "["
     >>. speciesLiteral
     .>> symbol ","
     .>>. (floatLiteral <|> speciesLiteral)
@@ -27,7 +28,8 @@ let concentration =
     
 // Module statement parsers
 let moduleStmt2SpeciesMaker id stmt =
-    symbol $"{id}["
+    symbol $"{id}"
+    >>. symbol "["
     >>. speciesLiteral
     .>> symbol ","
     .>>. speciesLiteral
@@ -35,7 +37,8 @@ let moduleStmt2SpeciesMaker id stmt =
     |>> stmt
 
 let moduleStmt3SpeciesMaker id stmt =
-    symbol $"{id}["
+    symbol $"{id}"
+    >>. symbol "["
     >>. speciesLiteral
     .>> symbol ","
     .>>. speciesLiteral
@@ -60,7 +63,8 @@ let command, commandRef = createParserForwardedToRef<Command, unit>()
 
 // Conditional statement parsers
 let conditionalStmtMaker id stmt =
-    symbol $"{id}["
+    symbol $"{id}"
+    >>. symbol "["
     >>. symbol "{"
     >>. many command
     .>> symbol "}"
