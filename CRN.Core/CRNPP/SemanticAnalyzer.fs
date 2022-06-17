@@ -45,6 +45,44 @@ let moduleOutputSpeciesAreDifferentFromInput crn =
     crn.Statements
     |> List.forall stmtSatisfiesRules
     
+/// Check the entire program for the species that are initially defined with a concentration,
+/// and find any that are used in the program that are used, but never defined.
+/// In the paper, such variables are initialized to 0. We require the specific declaration of them beforehand.
+let getUsedSpeciesThatWereNotDefinedAndThatAreDefinedInModules crn =
+    let rec getSpeciesUsedInCommand = function
+        | ModuleStmt m ->
+            match m with
+            | Load(SpeciesLiteral s1, SpeciesLiteral s2)
+            | SquareRoot(SpeciesLiteral s1, SpeciesLiteral s2) -> [s1; s2], [s1]
+            | Compare(SpeciesLiteral s1, SpeciesLiteral s2) -> [s1; s2], []
+            | Add(SpeciesLiteral s1, SpeciesLiteral s2, SpeciesLiteral s3)
+            | Subtract(SpeciesLiteral s1, SpeciesLiteral s2, SpeciesLiteral s3)
+            | Multiply(SpeciesLiteral s1, SpeciesLiteral s2, SpeciesLiteral s3)
+            | Divide(SpeciesLiteral s1, SpeciesLiteral s2, SpeciesLiteral s3) -> [s1; s2; s3], [s3]
+            | _ -> [], []
+        | ConditionalStmt c ->
+            match c with
+            | IfGreaterThan c | IfGreaterThanOrEquals c | IfEquals c | IfLesserThan c | IfLesserThanOrEquals c ->
+                let a, b = c |> List.map getSpeciesUsedInCommand |> List.unzip
+                a |> List.concat, b |> List.concat
+    
+    let defined = crn.Statements |> List.choose (fun s ->
+        match s with
+        | ConcentrationStmt(SpeciesLiteral c, _) -> Some c
+        | _ -> None) |> Set.ofList
+    
+    let used, definedLater =
+        crn.Statements
+        |> List.choose (fun s ->
+            match s with
+            | StepStmt cmds ->
+                let a, b = cmds |> List.map getSpeciesUsedInCommand |> List.unzip
+                Some (a |> List.concat, b |> List.concat)
+            | _ -> None) |> List.unzip |> fun (a, b) -> a |> List.concat |> Set.ofList, b |> List.concat |> Set.ofList
+    
+    let defined = Set.union defined definedLater
+    Set.difference used defined
+    
 let statementsAreNotConflicting crn =
     true // TODO
 
@@ -52,10 +90,14 @@ let statementsAreNotConflicting crn =
 let analyze (crn: Crn) : Result<Crn, string> =
     let crn = { crn with Arguments = extractMissingArguments crn }
     
+    let undefinedSpecies = getUsedSpeciesThatWereNotDefinedAndThatAreDefinedInModules crn
+    
     if not(concentrationsAreDefinedBeforeSteps crn) then
         Result.Error "All concentration declarations must happen before any steps."
     else if not(moduleOutputSpeciesAreDifferentFromInput crn) then
         Result.Error "Module statements must not have an output that is the same as an input."
+    else if not undefinedSpecies.IsEmpty then
+        Result.Error $"The following species were used in statements but were not defined with an initial concentration: %A{undefinedSpecies}"
     else if not(statementsAreNotConflicting crn) then
         Result.Error "Statements within a step module are conflicting."
     else
