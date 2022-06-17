@@ -1,6 +1,3 @@
-// Patrikas Balsys 16-06-2022
-// TODO everything here is deprecated, need to redo based on new understanding of the paper
-
 #r "nuget: FParsec"
 
 open FParsec
@@ -9,11 +6,15 @@ type Literal =
     | SpeciesLiteral of string
     | FloatLiteral of float
 
-type Reaction = Reaction of Literal list * Literal list * float
+type ReactionStmt = Reaction of Literal list * Literal list * Literal
 
-// Reactants, Products, rate constant
 type ModuleStmt =
-    | ReactStmt of Reaction list
+    | Load of Literal * Literal
+    | Add of Literal * Literal * Literal
+    | Subtract of Literal * Literal * Literal
+    | Multiply of Literal * Literal * Literal
+    | Divide of Literal * Literal * Literal
+    | SquareRoot of Literal * Literal
     | Compare of Literal * Literal
 
 type ConditionalStmt =
@@ -26,12 +27,15 @@ type ConditionalStmt =
 and Command =
     | ConditionalStmt of ConditionalStmt
     | ModuleStmt of ModuleStmt
+    | ReactionStmt of ReactionStmt
 
 type Statements =
     | ConcentrationStmt of Literal * Literal
     | StepStmt of Command list
 
-type Crn = { Statements: Statements list }
+type Crn =
+    { Statements: Statements list
+      Arguments: string list }
 
 // Basic parsers
 let ws: Parser<_, unit> = spaces
@@ -43,77 +47,49 @@ let skipComma = symbol "," |> skipMany1
 let floatLiteral = pfloat |>> FloatLiteral .>> ws
 
 let speciesLiteral =
-    many1Chars (letter <|> digit) |>> SpeciesLiteral
+    many1Chars (asciiLetter <|> digit)
+    |>> SpeciesLiteral
     |> token
 
 // Concentration statement parser
 let concentration =
     symbol "conc[" >>. speciesLiteral .>> symbol ","
-    .>>. floatLiteral
+    .>>. (floatLiteral <|> speciesLiteral)
     .>> symbol "]"
     |>> ConcentrationStmt
 
 // Module statement parsers
-let loadConstructor (a, b) =
-    ReactStmt [ Reaction([ a ], [ a; b ], 1)
-                Reaction([ b ], [ FloatLiteral 0 ], 1) ]
-
-let addConstructor (a, b, c) =
-    ReactStmt [ Reaction([ a ], [ a; c ], 1)
-                Reaction([ b ], [ b; c ], 1)
-                Reaction([ c ], [ FloatLiteral 0 ], 1) ]
-
-let subConstructor (a, b, c) = // TODO (what is H?)
-    ReactStmt [ Reaction([ a ], [ a; c ], 1)
-                Reaction([ b ], [ b; SpeciesLiteral "H" ], 1)
-                Reaction([ c ], [ FloatLiteral 0 ], 1)
-                Reaction([ c; SpeciesLiteral "H" ], [ FloatLiteral 0 ], 1) ]
-
-let mulConstructor (a, b, c) =
-    ReactStmt [ Reaction([ a; b ], [ a; b; c ], 1)
-                Reaction([ c ], [ FloatLiteral 0 ], 1) ]
-
-let divConstructor (a, b, c) =
-    ReactStmt [ Reaction([ a ], [ a; c ], 1)
-                Reaction([ b; c ], [ b ], 1) ]
-
-let sqrtConstructor (a, b) =
-    ReactStmt [ Reaction([ a ], [ a; b ], 1)
-                Reaction([ b; b ], [ FloatLiteral 0 ], 0.5) ]
-
-let cmpConstructor (a, b) = Compare(a, b)
-
-let moduleStmt2SpeciesMaker id constructor =
+let moduleStmt2SpeciesMaker id stmt =
     symbol $"{id}[" >>. speciesLiteral .>> symbol ","
     .>>. speciesLiteral
     .>> symbol "]"
-    |>> constructor
+    |>> stmt
 
-let moduleStmt3SpeciesMaker id constructor =
+let moduleStmt3SpeciesMaker id stmt =
     symbol $"{id}[" >>. speciesLiteral .>> symbol ","
     .>>. speciesLiteral
     .>> symbol ","
     .>>. speciesLiteral
     .>> symbol "]"
     |>> fun ((a, b), c) -> a, b, c
-    |>> constructor
+    |>> stmt
 
-let load = moduleStmt2SpeciesMaker "ld" loadConstructor
-let add = moduleStmt3SpeciesMaker "add" addConstructor
-let sub = moduleStmt3SpeciesMaker "sub" subConstructor
-let mul = moduleStmt3SpeciesMaker "mul" mulConstructor
-let div = moduleStmt3SpeciesMaker "div" divConstructor
-let sqrt = moduleStmt2SpeciesMaker "sqrt" sqrtConstructor
-let cmp = moduleStmt2SpeciesMaker "cmp" cmpConstructor
+let load = moduleStmt2SpeciesMaker "ld" Load
+let sqrt = moduleStmt2SpeciesMaker "sqrt" SquareRoot
+let cmp = moduleStmt2SpeciesMaker "cmp" Compare
+let add = moduleStmt3SpeciesMaker "add" Add
+let sub = moduleStmt3SpeciesMaker "sub" Subtract
+let mul = moduleStmt3SpeciesMaker "mul" Multiply
+let div = moduleStmt3SpeciesMaker "div" Divide
 
 let moduleStmt =
     choice [ load
+             sqrt
+             cmp
              add
              sub
              mul
-             div
-             sqrt
-             cmp ]
+             div ]
     |>> ModuleStmt
 
 // Command parser, forward created for recursive usage
@@ -136,6 +112,20 @@ let conditionalStmt =
     choice [ ifGT; ifGE; ifEQ; ifLT; ifLE ]
     |>> ConditionalStmt
 
+// Reaction statement parser
+let expression = sepBy speciesLiteral (symbol "+")
+
+let rxn =
+    symbol "rxn[" >>. expression .>> symbol ","
+    .>>. expression
+    .>> symbol ","
+    .>>. floatLiteral
+    .>> symbol "]"
+    |>> (fun ((a, b), c) -> a, b, c)
+    |>> Reaction
+
+let reactionStmt = rxn |>> ReactionStmt
+
 // Step parser
 let step =
     symbol "step["
@@ -148,7 +138,10 @@ let step =
     |>> StepStmt
 
 // Command parser, declare actual parser after all necessary parsers in between are defined
-commandRef.Value <- (moduleStmt <|> conditionalStmt)
+commandRef.Value <-
+    (choice [ moduleStmt
+              conditionalStmt
+              reactionStmt ])
 
 // Statement parser
 let statement = (concentration <|> step)
@@ -162,7 +155,7 @@ let program =
         statement
         .>> (attempt skipComma <|> (symbol "};" |>> ignore))
     )
-    |>> fun p -> { Statements = p }
+    |>> fun p -> { Statements = p; Arguments = [] }
 
 let programFull = ws >>. program .>> ws .>> eof
 
@@ -171,54 +164,3 @@ let parse input =
     match run programFull input with
     | Success (res, _, _) -> Result.Ok res
     | Failure (err, _, _) -> Result.Error err
-
-//* -------------
-
-// counter.m
-let crn1 =
-    """
-crn = {
-conc[c,c0], conc[cInitial,c0],
-conc[one,1], conc[zero,0],
-step[{
-    sub[c,one,cnext],
-    cmp[c,zero]
-}],
-step[{
-    ifGT[{ld[cnext,c]}],
-    ifLE[{ld[cInitial,c]}]
-}]
-};
-"""
-
-// sequence.m
-let crn2 =
-    """
-crn = {
-conc[a, 3],
-step[{
-    rxn[a, b, 1]
-}],
-step[{
-    rxn[b, c, 1]
-}],
-step[{
-    rxn[c, a, 1]
-}]
-};
-"""
-
-// multiplication
-let crn3 =
-    """
-crn = {
-conc[a, 6],
-conc[b, 2],
-conc[c, 0],
-step[{
-    mul[a, b, c]
-}],
-};
-"""
-
-parse crn1
