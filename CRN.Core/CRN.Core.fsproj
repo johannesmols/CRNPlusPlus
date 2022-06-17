@@ -13,10 +13,13 @@
         <Compile Include="CRNPP\Parser.fs" />
         <Compile Include="CRNPP\Interpreter.fsi" />
         <Compile Include="CRNPP\Interpreter.fs" />
+        <Compile Include="CRNPP\Plot.fs" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="FParsec" Version="1.1.1" />
+      <PackageReference Include="Plotly.NET" Version="3.0.0" />
+      <PackageReference Update="FSharp.Core" Version="6.0.5" />
     </ItemGroup>
 
 </Project>
