@@ -1,7 +1,6 @@
 ﻿module CRN.Core.CRNPP.Plot
 
 open CRN.Core.CRNPP.Interpreter
-open CRN.Core.CRNPP.Types
 
 open Plotly.NET
 
@@ -33,7 +32,7 @@ let getDataSeries states =
     |> Map.toSeq
     
 /// Create lines with hard edges by adding a vertical line to the y-value of the next value after each value
-let interpolateLines (data: seq<string * float list>) =
+let interpolateLines data =
     data
     |> Seq.map (fun (label, data) ->
         label,
@@ -44,7 +43,7 @@ let interpolateLines (data: seq<string * float list>) =
         |> Seq.concat)
 
 /// Plot a sequence of states and show it in the browser
-let plot (states: seq<State>) =
+let plot states =
     let data = getDataSeries states
     let interpolated = interpolateLines data
     
