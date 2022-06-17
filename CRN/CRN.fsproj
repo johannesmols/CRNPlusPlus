@@ -7,10 +7,20 @@
 
     <ItemGroup>
         <Compile Include="Program.fs" />
+        <None Include="Scripts\sequences.fsx" />
+        <None Include="Scripts\FParsecTutorial.fsx" />
+        <None Include="Scripts\FParsecEx1.fsx" />
+        <None Include="Scripts\CRN.fsx" />
+        <None Include="Scripts\Chemical.fsx" />
+        <None Include="Scripts\PlotlyExample.fsx" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\CRN.Core\CRN.Core.fsproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Update="FSharp.Core" Version="6.0.5" />
     </ItemGroup>
 
 </Project>

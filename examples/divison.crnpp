@@ -4,13 +4,13 @@
         cmp[a,b]
     }],
     step[{
-        IfGE[{
+        ifGE[{
             sub[a,b,anext ],
             add[q,one,qnext]
         }]
     }],
     step[{
-        IfGE[{
+        ifGE[{
             ld [anext,a ],
             ld [qnext,q]
         }],
