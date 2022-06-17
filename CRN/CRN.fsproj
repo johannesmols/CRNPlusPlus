@@ -7,6 +7,11 @@
 
     <ItemGroup>
         <Compile Include="Program.fs" />
+        <None Include="Scripts\sequences.fsx" />
+        <None Include="Scripts\FParsecTutorial.fsx" />
+        <None Include="Scripts\FParsecEx1.fsx" />
+        <None Include="Scripts\CRN.fsx" />
+        <None Include="Scripts\Chemical.fsx" />
     </ItemGroup>
 
     <ItemGroup>
