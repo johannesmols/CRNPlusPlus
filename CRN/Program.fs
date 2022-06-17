@@ -37,11 +37,11 @@ let main args =
         Environment.Exit 3
     | Ok crn ->
         if args.Length <> crn.Arguments.Length + 2 then
-            failwith $"Parsed program expects values for the following species: {crn.Arguments}"
+            failwith $"Parsed program expects values for the following species: %A{crn.Arguments}"
         let allStates = interpret crn (args |> List.ofArray |> List.skip 2 |> List.map argToVal |> Map.ofList)
         let stepsToEvaluate = args[1] |> int
         let states = allStates |> Seq.take stepsToEvaluate
-        states |> Seq.iteri (fun i s -> printfn $"State {i}: {s}")
+        states |> Seq.iteri (fun i s -> printfn $"State {i}: %A{s}")
         
     0
    
