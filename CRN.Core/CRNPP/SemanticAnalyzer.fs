@@ -12,6 +12,7 @@ let extractMissingArguments crn =
             | SpeciesLiteral s -> Some s
             | _ -> None
         | _ -> None )
+    |> List.distinct
 
 /// Check that concentration statements appear before any step statements
 let concentrationsAreDefinedBeforeSteps crn =

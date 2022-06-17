@@ -66,8 +66,7 @@ let conditionalStmtMaker id stmt =
     symbol $"{id}"
     >>. symbol "["
     >>. symbol "{"
-    >>. many command
-    .>> symbol "}"
+    >>. many (command .>> (attempt skipComma <|> (symbol "}" |>> ignore)))
     .>> symbol "]"
     |>> stmt
     
@@ -81,7 +80,8 @@ let conditionalStmt = choice [ ifGT; ifGE; ifEQ; ifLT; ifLE ] |>> Command.Condit
 
 // Step parser
 let step =
-    symbol "step["
+    symbol "step"
+    >>. symbol "["
     >>. symbol "{"
     >>. many (command .>> (attempt skipComma <|> (symbol "}" |>> ignore)))
     .>> symbol "]"

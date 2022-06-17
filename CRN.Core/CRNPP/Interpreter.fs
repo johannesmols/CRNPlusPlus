@@ -10,7 +10,14 @@ module Seq =
 type State = {
     Concentrations : Map<string, float>
     Comparison : float * float
-}
+} with
+    // TODO: Is 0.5 really a good margin? Relative margin might be better (see https://docs.microsoft.com/en-us/dotnet/api/system.double.equals?view=net-6.0)
+    member this.IsEqual = abs(fst this.Comparison - snd this.Comparison) <= 0.5
+    member this.IsGreater = fst this.Comparison > snd this.Comparison
+    member this.IsLesser = fst this.Comparison < snd this.Comparison
+    member this.IsGreaterOrEquals = this.IsEqual || this.IsGreater
+    member this.IsLesserOrEquals = this.IsEqual || this.IsLesser
+    
 
 /// Replace concentration statements where value is another species with actual values from the arguments
 let replaceConcentrationsWithArguments crn (args: Map<string, float>) =
@@ -37,13 +44,13 @@ let simulateStep (state: State) (step: Statement) =
         match i, t with
         | SpeciesLiteral i, SpeciesLiteral t -> 
             { state with Concentrations = state.Concentrations.Add(t, op state.Concentrations[i]) }
-        | _ -> failwith $"Attempted to use {op_l} operator with float literals."
+        | _ -> failwith $"Attempted to use {op_l} module with float literals."
     
     let performOperator3 state i1 i2 t op_l op =
         match i1, i2, t with
         | SpeciesLiteral i1, SpeciesLiteral i2, SpeciesLiteral t -> 
             { state with Concentrations = state.Concentrations.Add(t, op state.Concentrations[i1] state.Concentrations[i2]) }
-        | _ -> failwith $"Attempted to use {op_l} operator with float literals."
+        | _ -> failwith $"Attempted to use {op_l} module with float literals."
     
     let moduleStmt (state: State) = function
         | Load(i, target) -> performOperator2 state i target "ld" id
@@ -52,16 +59,20 @@ let simulateStep (state: State) (step: Statement) =
         | Multiply(i1, i2, target) -> performOperator3 state i1 i2 target "mul" (*)
         | Divide(i1, i2, target) -> performOperator3 state i1 i2 target "div" (/)
         | SquareRoot(i, target) -> performOperator2 state i target "sqrt" sqrt
-        | Compare(i, target) -> state
+        | Compare(i, target) ->
+            match i, target with
+            | SpeciesLiteral i, SpeciesLiteral t ->
+                { state with Comparison = state.Concentrations[i], state.Concentrations[t] }
+            | _ -> failwith "Attempted to use comparison module with float literals."
+            
+    let rec conditionalStmt (state: State) = function
+        | IfGreaterThan cmds -> if state.IsGreater then simulate state cmds else state
+        | IfGreaterThanOrEquals cmds -> if state.IsGreaterOrEquals then simulate state cmds else state
+        | IfEquals cmds -> if state.IsEqual then simulate state cmds else state
+        | IfLesserThan cmds -> if state.IsLesser then simulate state cmds else state
+        | IfLesserThanOrEquals cmds -> if state.IsLesserOrEquals then simulate state cmds else state
     
-    let conditionalStmt (state: State) = function
-        | IfGreaterThan cmds -> state
-        | IfGreaterThanOrEquals cmds -> state
-        | IfEquals cmds -> state
-        | IfLesserThan cmds -> state
-        | IfLesserThanOrEquals cmds -> state
-    
-    let rec simulate (state: State) (steps: Command list) =
+    and simulate (state: State) (steps: Command list) =
         match steps with
         | [] -> state
         | cmd :: rem ->
