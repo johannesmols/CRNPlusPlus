@@ -48,7 +48,7 @@ let simulateStep (state: State) (step: Statement) =
     let moduleStmt (state: State) = function
         | Load(i, target) -> performOperator2 state i target "ld" id
         | Add(i1, i2, target) -> performOperator3 state i1 i2 target "add" (+)
-        | Subtract(i1, i2, target) -> performOperator3 state i1 i2 target "sub" (fun a b -> match a > b with | true -> a - b | false -> 0.)
+        | Subtract(i1, i2, target) -> performOperator3 state i1 i2 target "sub" (fun a b -> if a > b then a - b else 0.)
         | Multiply(i1, i2, target) -> performOperator3 state i1 i2 target "mul" (*)
         | Divide(i1, i2, target) -> performOperator3 state i1 i2 target "div" (/)
         | SquareRoot(i, target) -> performOperator2 state i target "sqrt" sqrt
@@ -80,16 +80,10 @@ let interpret crn (args: Map<string, float>) =
         failwith $"Expected {crn.Arguments.Length} arguments, but received {args.Count}."
         
     let crn = replaceConcentrationsWithArguments crn args
-    let state = constructInitialState crn
+    let initialState = constructInitialState crn
     
     let steps = crn.Statements
                 |> List.filter (fun s -> match s with | StepStmt _ -> true | _ -> false)
                 |> Seq.repeat
     
-    let states = seq {
-        yield! (state, steps) ||> Seq.scan simulateStep
-    }
-    
-    let first10 = states |> Seq.take 10
-    
-    true
+    (initialState, steps) ||> Seq.scan simulateStep |> Seq.cache

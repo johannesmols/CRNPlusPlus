@@ -10,10 +10,18 @@ let argToVal (input: string) =
     | species::[value] -> species, value |> float
     | _ -> failwith $"Argument {input} cannot be split in two parts by the character '=' and parsed to species and float literals."
 
+let parseProgramFromFile file (args: string array) =
+    try
+        let text = File.ReadAllText file
+        parse text
+    with
+    | :? IOException as e -> Result.Error $"Exception occurred while reading input file: {e.Message}"
+    | e -> Result.Error $"Exception occurred: {e.Message}"
+
 [<EntryPoint>]
 let main args =
-    if args.Length = 0 then
-        printfn "No arguments provided. Please provide the source file name and required values, if any."
+    if args.Length < 2 then
+        printfn "Too few arguments provided. Please provide the source file name, number of steps to simulate, and required values, if any."
         Environment.Exit 1
     
     let input_file = args[0]
@@ -22,18 +30,18 @@ let main args =
         printfn $"Input file '{input_file}' does not exist"
         Environment.Exit 2
     
-    try
-        let text = File.ReadAllText input_file
-        match parse text with
-        | Result.Ok res ->
-            printfn $"Successfully parsed {Path.GetFileName input_file} into AST: {res}"
-            if args.Length <> res.Arguments.Length + 1 then
-                failwith $"Parsed program expects values for the following species: {res.Arguments}"
-            let interpretation = interpret res (args |> List.ofArray |> List.tail |> List.map argToVal |> Map.ofList)
-            interpretation |> ignore
-        | Result.Error err -> printfn $"Failed to parse {Path.GetFileName input_file}: {err}"
-    with
-    | e -> printfn $"Exception occurred during parsing: {e.Message}"
-    
+    let parseRes = parseProgramFromFile input_file args
+    match parseRes with
+    | Error err ->
+        printfn $"{err}"
+        Environment.Exit 3
+    | Ok crn ->
+        if args.Length <> crn.Arguments.Length + 2 then
+            failwith $"Parsed program expects values for the following species: {crn.Arguments}"
+        let allStates = interpret crn (args |> List.ofArray |> List.skip 2 |> List.map argToVal |> Map.ofList)
+        let stepsToEvaluate = args[1] |> int
+        let states = allStates |> Seq.take stepsToEvaluate
+        states |> Seq.iteri (fun i s -> printfn $"State {i}: {s}")
+        
     0
    

@@ -7,4 +7,4 @@ type State = {
     Comparison : float * float
 }
 
-val interpret : Crn -> Map<string, float> -> bool
+val interpret : Crn -> Map<string, float> -> seq<State>
