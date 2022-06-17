@@ -13,6 +13,7 @@
         <Compile Include="CRNPP\Parser.fs" />
         <Compile Include="CRNPP\Interpreter.fsi" />
         <Compile Include="CRNPP\Interpreter.fs" />
+        <Compile Include="CRNPP\Plot.fsi" />
         <Compile Include="CRNPP\Plot.fs" />
     </ItemGroup>
 

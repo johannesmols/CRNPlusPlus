@@ -5,6 +5,7 @@ open CRN.Core.CRNPP.Types
 
 open Plotly.NET
 
+/// Extract the different series of data from a sequence of states
 let getDataSeries states =
     let series =
         states
@@ -29,11 +30,27 @@ let getDataSeries states =
        match v.Length = maxLength with
        | false -> List.replicate (maxLength - v.Length) 0. @ v
        | true -> v)
+    |> Map.toSeq
+    
+/// Create lines with hard edges by adding a vertical line to the y-value of the next value after each value
+let interpolateLines (data: seq<string * float list>) =
+    data
+    |> Seq.map (fun (label, data) ->
+        label,
+        data
+        |> Seq.indexed
+        |> Seq.pairwise
+        |> Seq.map (fun ((ax, ay), (bx, _)) -> [float ax, ay; float bx, ay])
+        |> Seq.concat)
 
+/// Plot a sequence of states and show it in the browser
 let plot (states: seq<State>) =
     let data = getDataSeries states
+    let interpolated = interpolateLines data
     
-    let xData = [0. .. 10.]
-    let yData = [0. .. 10.]
-    Chart.Point(xData,yData)
+    let charts = interpolated |> Seq.map (fun (name, values) ->
+        Chart.Line(xy = values, Name = name))
+    
+    charts
+    |> Chart.combine
     |> Chart.show
