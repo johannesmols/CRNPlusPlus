@@ -39,16 +39,29 @@ let constructInitialState crn =
             | SpeciesLiteral s, FloatLiteral f -> Some(s, f)
             | _ -> failwith "Can't construct initial state with concentrations where value is not a float.") |> Map.ofList }
     
+/// Simulate a step of a program on a given state
 let simulateStep (state: State) (step: Statement) =
+    let rec addZeroValuesIfNotExisting species state =
+        match species with
+        | [] -> state
+        | h::t ->
+            if not(state.Concentrations.ContainsKey h) then
+                { state with Concentrations = state.Concentrations.Add(h, 0.) }
+                |> addZeroValuesIfNotExisting t
+            else
+                state |> addZeroValuesIfNotExisting t
+    
     let performOperator2 state i t op_l op =
         match i, t with
-        | SpeciesLiteral i, SpeciesLiteral t -> 
+        | SpeciesLiteral i, SpeciesLiteral t ->
+            let state = addZeroValuesIfNotExisting [i] state
             { state with Concentrations = state.Concentrations.Add(t, op state.Concentrations[i]) }
         | _ -> failwith $"Attempted to use {op_l} module with float literals."
     
     let performOperator3 state i1 i2 t op_l op =
         match i1, i2, t with
-        | SpeciesLiteral i1, SpeciesLiteral i2, SpeciesLiteral t -> 
+        | SpeciesLiteral i1, SpeciesLiteral i2, SpeciesLiteral t ->
+            let state = addZeroValuesIfNotExisting [i1; i2] state
             { state with Concentrations = state.Concentrations.Add(t, op state.Concentrations[i1] state.Concentrations[i2]) }
         | _ -> failwith $"Attempted to use {op_l} module with float literals."
     
