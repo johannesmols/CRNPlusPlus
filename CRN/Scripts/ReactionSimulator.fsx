@@ -160,8 +160,8 @@ let trySimulate crnpp =
 
 //* --- Testing
 
-let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
+// let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
 
-trySimulate crnpp1
-|> Seq.take (15 * 1000)
-|> Seq.toList
+// trySimulate crnpp1
+// |> Seq.take (15 * 1000)
+// |> Seq.toList
