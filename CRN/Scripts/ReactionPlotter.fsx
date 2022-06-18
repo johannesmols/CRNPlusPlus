@@ -25,13 +25,15 @@ let plotReaction s =
     toCharts s |> Chart.combine |> Chart.show
 
 
-let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
-let crnpp2 = File.ReadAllText "./CRN/Scripts/examples/oscillator.crnpp"
+let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/oscillator.crnpp"
+let crnpp2 = File.ReadAllText "./CRN/Scripts/examples/oscillator2.crnpp"
+let crnpp3 = File.ReadAllText "./CRN/Scripts/examples/oscillator3.crnpp"
+let crnpp4 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
 
-trySimulate crnpp1
+trySimulate crnpp4
 |> Seq.take (15 * 1000)
 |> plotReaction
 
 trySimulate crnpp2
 |> Seq.take (15 * 1000)
-|> plotReaction
+|> Seq.toList

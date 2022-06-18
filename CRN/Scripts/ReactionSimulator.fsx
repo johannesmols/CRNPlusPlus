@@ -39,8 +39,8 @@ let rec convertCommands =
 let rec convertStatements (cons, steps) =
     function
     | [] -> (cons, steps)
-    | ConcentrationStmt (l1, l2) :: tail -> convertStatements (ConcentrationStmt(l1, l2) :: cons, steps) tail
-    | StepStmt (cmds) :: tail -> convertStatements (cons, convertCommands cmds :: steps) tail
+    | ConcentrationStmt (l1, l2) :: tail -> convertStatements (cons @ [ ConcentrationStmt(l1, l2) ], steps) tail
+    | StepStmt (cmds) :: tail -> convertStatements (cons, steps @ [ convertCommands cmds ]) tail
 
 let convertCRN crn =
     let sts = crn.Statements
@@ -104,21 +104,22 @@ let speciesDerivative (species: string) (rs: ReactionState) t =
         0.0
         rs.Reactions
 
-let rec speciesSet step =
-    match step with
-    | [] -> Set.empty
-    | Reaction (reactants, products, _) :: tail -> Set.union (Set(reactants @ products)) (speciesSet tail)
+let speciesInStep step =
+    Set(List.fold (fun acc (Reaction (reacts, prods, _)) -> acc @ reacts @ prods) [] step)
 
-let rec getInitValues cons =
+let speciesInCons cons =
+    Set(List.map (fun (ConcentrationStmt (s, _)) -> s) cons)
+
+let getInitValues cons =
     Map(List.map (fun (ConcentrationStmt (SpeciesLiteral s, FloatLiteral v)) -> (s, v)) cons)
 
-let rec generateValueFunctions rs speciesList =
+let generateValueFunctions rs speciesList =
     Map(List.map (fun (SpeciesLiteral s) -> (s, speciesValue s rs)) speciesList)
 
-let rec generateDerivativeFunctions rs speciesList =
+let generateDerivativeFunctions rs speciesList =
     Map(List.map (fun (SpeciesLiteral s) -> (s, speciesDerivative s rs)) speciesList)
 
-let rec generateValues (rs: ReactionState) speciesList =
+let generateValues (rs: ReactionState) speciesList =
     Map(List.map (fun (SpeciesLiteral s) -> (s, rs.S s rs.Time)) speciesList)
 
 let reactionSeq prec (cons, steps) =
@@ -134,7 +135,8 @@ let reactionSeq prec (cons, steps) =
           ValueFunctions = Map.empty
           DerivativeFunctions = Map.empty }
 
-    let allSpecies = Set.toList (speciesSet step)
+    let allSpecies = Set.toList (Set.union (speciesInStep step) (speciesInCons cons))
+    printf "%O" rs
 
     rs.ValueFunctions <- generateValueFunctions rs allSpecies
     rs.DerivativeFunctions <- generateDerivativeFunctions rs allSpecies
@@ -149,6 +151,7 @@ let reactionSeq prec (cons, steps) =
 
 let simulate crn =
     let rn = convertCRN crn
+    printfn "%O" rn
     rn |> reactionSeq 0.001
 
 let trySimulate crnpp =
@@ -160,8 +163,11 @@ let trySimulate crnpp =
 
 //* --- Testing
 
-// let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
+let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/oscillator.crnpp"
+let crnpp2 = File.ReadAllText "./CRN/Scripts/examples/oscillator2.crnpp"
+let crnpp3 = File.ReadAllText "./CRN/Scripts/examples/oscillator3.crnpp"
+let crnpp4 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
 
-// trySimulate crnpp1
-// |> Seq.take (15 * 1000)
-// |> Seq.toList
+trySimulate crnpp3
+|> Seq.take (15 * 1000)
+|> Seq.toList
