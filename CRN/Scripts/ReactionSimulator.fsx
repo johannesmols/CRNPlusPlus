@@ -3,6 +3,7 @@
 open ReactionParser
 open System.IO
 
+
 // Conversion functions
 let convertModuleStmt =
     function
@@ -54,12 +55,17 @@ let rec count x xs =
     | head :: tail when head = x -> 1 + count x tail
     | head :: tail -> count x tail
 
-let netChange s rs ps = count s ps - count s rs
+let netChange s reactants products = count s products - count s reactants
 
 type ReactionState =
-    { Values: Map<string, float>
-      ValueFunctions: Map<string, string -> float -> ReactionState -> float -> float -> float -> float>
-      DerivativeFunctions: Map<string, float -> float> }
+    { mutable Time: float
+      mutable Precision: float
+      mutable Reactions: ReactionStmt list
+      mutable InitialValues: Map<string, float>
+      mutable Values: Map<string, float>
+      mutable NewValues: Map<string, float>
+      mutable ValueFunctions: Map<string, float -> float>
+      mutable DerivativeFunctions: Map<string, float -> float> }
 
     member this.S species =
         (this.ValueFunctions.TryFind species).Value
@@ -67,29 +73,100 @@ type ReactionState =
     member this.S' species =
         (this.DerivativeFunctions.TryFind species).Value
 
-let rs1 =
-    { Values = Map.empty
-      ValueFunctions = Map.empty
-      DerivativeFunctions = Map.empty }
+    member this.getVal species = (this.Values.TryFind species).Value
 
-let rec speciesValue species prec (rs: ReactionState) startVal prevVal t =
+    member this.getInitVal species =
+        (this.InitialValues.TryFind species).Value
+
+    member this.setVal species value =
+        this.NewValues <- this.NewValues.Add(species, value)
+
+    member this.updateValues = this.Values <- this.NewValues
+
+let speciesValue species (rs: ReactionState) t =
     match t with
-    | 0.0 -> startVal
-    | _ -> prevVal + prec * (rs.S' species) (t - prec)
+    | 0.0 -> rs.getInitVal species
+    | _ ->
+        rs.getVal species
+        + rs.Precision * (rs.S' species) (t - rs.Precision)
 
 
-let reactantProduct (reactants: list<string>) prec (rs: ReactionState) startVal prevVal t =
-    List.fold (fun s r -> s * ((rs.S r) r prec rs startVal prevVal t)) 1.0 reactants
+let reactantProduct (reactants: list<Literal>) (rs: ReactionState) t =
+    List.fold (fun s (SpeciesLiteral r) -> s * ((rs.S r) t)) 1.0 reactants
 
-let rec speciesDerivative species rxns =
-    List.fold (fun s (Reaction (rs, ps, FloatLiteral k)) -> s + (k * float (netChange species rs ps))) 0.0 rxns
+let speciesDerivative (species: string) (rs: ReactionState) t =
+    List.fold
+        (fun s (Reaction (r, p, FloatLiteral k)) ->
+            s
+            + (k * float (netChange (SpeciesLiteral species) r p))
+            + reactantProduct r rs t)
+        0.0
+        rs.Reactions
+
+let rec speciesSet step =
+    match step with
+    | [] -> Set.empty
+    | Reaction (reactants, products, _) :: tail ->
+        let r = Set(reactants)
+        let p = Set(products)
+        Set.union (Set.union r p) (speciesSet tail)
+
+let rec getInitValues cons =
+    match cons with
+    | [] -> Map.empty
+    | ConcentrationStmt (SpeciesLiteral s, FloatLiteral v) :: tail -> Map.add s v (getInitValues tail)
+
+let rec generateValueFunctions rs species =
+    match species with
+    | [] -> Map.empty
+    | SpeciesLiteral (species) :: tail -> Map.add species (speciesValue species rs) (generateValueFunctions rs tail)
+
+let rec generateDerivativeFunctions rs species =
+    match species with
+    | [] -> Map.empty
+    | SpeciesLiteral (species) :: tail ->
+        Map.add species (speciesDerivative species rs) (generateDerivativeFunctions rs tail)
+
+let rec generateValues (rs: ReactionState) species =
+    match species with
+    | [] -> Map.empty
+    | SpeciesLiteral (species) :: tail -> Map.add species (rs.S species rs.Time) (generateValues rs tail)
 
 
-// TODO simulation
+let reactionSeq prec (cons, steps) =
+    let step = List.head steps
+
+    let rs =
+        { Time = 0.0
+          Precision = prec
+          Reactions = step
+          InitialValues = getInitValues cons
+          Values = getInitValues cons
+          NewValues = Map.empty
+          ValueFunctions = Map.empty
+          DerivativeFunctions = Map.empty }
+
+    let allSpecies = Set.toList (speciesSet step)
+
+    rs
+    |> Seq.unfold (fun rs ->
+        rs.ValueFunctions <- generateValueFunctions rs allSpecies
+        rs.DerivativeFunctions <- generateDerivativeFunctions rs allSpecies
+
+        rs.Values <- generateValues rs allSpecies
+
+
+        // update reaction state
+        rs.updateValues
+        rs.Time <- rs.Time + prec
+        // Return (result, new state)
+        Some(rs.Values, rs))
+
+
 let simulate crn =
     let rn = convertCRN crn
-    // rn |> constructState |> constructSequence
-    rn
+    rn |> reactionSeq 0.001
+
 
 let trySimulate crnpp =
     let result = parse crnpp
@@ -104,4 +181,5 @@ let trySimulate crnpp =
 
 let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
 
-trySimulate crnpp1
+let s1 = trySimulate crnpp1
+s1 |> Seq.take 5 |> Seq.toList
