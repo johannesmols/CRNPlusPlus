@@ -5,35 +5,31 @@ open ReactionSimulator
 open Plotly.NET
 open System.IO
 
-let xs = [ 0.0..0.001..15.0 ]
-
-let rec toCharts' (values: list<Map<string, float>>) speciesList =
+let rec toCharts' xs (values: list<Map<string, float>>) speciesList =
     match speciesList with
     | [] -> []
     | species :: tail ->
         let speciesSequence = List.map (fun m -> Map.find species m) values
 
         Chart.Line(xs, speciesSequence, Name = species)
-        :: toCharts' values tail
+        :: toCharts' xs values tail
 
-let toCharts (s: seq<Map<string, float>>) =
-    let firstPoint = Seq.item 0 s
+let toCharts prec maxTime (s: seq<Map<string, float>>) =
+    let values = Seq.toList s
+    let firstPoint = List.item 0 values
     let speciesList = Seq.toList (Map.keys firstPoint)
-    toCharts' (Seq.toList s) speciesList
+    let xs = [ 0.0 .. (prec) .. float (maxTime) ]
+    toCharts' xs values speciesList
 
-let plotReaction s =
-    toCharts s |> Chart.combine |> Chart.show
+let plotReaction prec stepTime maxTime crn =
+    simulate prec stepTime crn
+    |> Seq.take (maxTime * int (1.0 / prec))
+    |> toCharts prec maxTime
+    |> Chart.combine
+    |> Chart.show
 
+let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
+let crnpp2 = File.ReadAllText "./CRN/Scripts/examples/oscillator.crnpp"
+let crnpp3 = File.ReadAllText "./CRN/Scripts/examples/sequence.crnpp"
 
-let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/oscillator.crnpp"
-let crnpp2 = File.ReadAllText "./CRN/Scripts/examples/oscillator2.crnpp"
-let crnpp3 = File.ReadAllText "./CRN/Scripts/examples/oscillator3.crnpp"
-let crnpp4 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
-
-trySimulate crnpp4
-|> Seq.take (15 * 1000)
-|> plotReaction
-
-trySimulate crnpp2
-|> Seq.take (15 * 1000)
-|> Seq.toList
+plotReaction 0.001 20 100 crnpp3

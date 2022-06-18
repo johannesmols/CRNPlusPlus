@@ -47,16 +47,9 @@ let convertCRN crn =
     convertStatements ([], []) sts
 
 // ODE functions
-let rec count x xs =
-    match xs with
-    | [] -> 0
-    | head :: tail when head = x -> 1 + count x tail
-    | head :: tail -> count x tail
-
-let netChange s reactants products = count s products - count s reactants
-
 type ReactionState =
-    { mutable Time: float
+    { mutable StepCounter: int
+      mutable Time: float
       mutable Precision: float
       mutable Reactions: ReactionStmt list
       mutable InitialValues: Map<string, float>
@@ -76,10 +69,15 @@ type ReactionState =
     member this.getInitVal species =
         (this.InitialValues.TryFind species).Value
 
-    member this.setVal species value =
-        this.NewValues <- this.NewValues.Add(species, value)
-
     member this.updateValues = this.Values <- this.NewValues
+
+let rec count x xs =
+    match xs with
+    | [] -> 0
+    | head :: tail when head = x -> 1 + count x tail
+    | head :: tail -> count x tail
+
+let netChange s reactants products = count s products - count s reactants
 
 let speciesValue species (rs: ReactionState) t =
     match t with
@@ -87,7 +85,6 @@ let speciesValue species (rs: ReactionState) t =
     | _ ->
         rs.getVal species
         + rs.Precision * (rs.S' species) (t - rs.Precision)
-
 
 let reactantProduct (reactants: list<Literal>) (rs: ReactionState) t =
     List.fold (fun s (SpeciesLiteral r) -> s * ((rs.getVal r))) 1.0 reactants
@@ -104,6 +101,7 @@ let speciesDerivative (species: string) (rs: ReactionState) t =
         0.0
         rs.Reactions
 
+// Helper functions
 let speciesInStep step =
     Set(List.fold (fun acc (Reaction (reacts, prods, _)) -> acc @ reacts @ prods) [] step)
 
@@ -122,52 +120,52 @@ let generateDerivativeFunctions rs speciesList =
 let generateValues (rs: ReactionState) speciesList =
     Map(List.map (fun (SpeciesLiteral s) -> (s, rs.S s rs.Time)) speciesList)
 
-let reactionSeq prec (cons, steps) =
-    let step = List.head steps
+// Reaction sequence
+let reactionSeq prec stepTime (cons, steps) =
+    let stepCount = List.length steps
+    let stepInterval = stepTime * int (1.0 / prec)
+    let firstStep = List.head steps
 
-    let rs =
-        { Time = 0.0
+    let reactionState =
+        { StepCounter = 0
+          Time = 0.0
           Precision = prec
-          Reactions = step
+          Reactions = []
           InitialValues = getInitValues cons
           Values = getInitValues cons
           NewValues = Map.empty
           ValueFunctions = Map.empty
           DerivativeFunctions = Map.empty }
 
-    let allSpecies = Set.toList (Set.union (speciesInStep step) (speciesInCons cons))
-    printf "%O" rs
+    let allSpecies =
+        Set.toList (Set.union (speciesInStep firstStep) (speciesInCons cons))
 
-    rs.ValueFunctions <- generateValueFunctions rs allSpecies
-    rs.DerivativeFunctions <- generateDerivativeFunctions rs allSpecies
-
-    rs
+    reactionState
     |> Seq.unfold (fun rs ->
+        if rs.StepCounter % stepInterval = 0 then
+            rs.Reactions <- List.item (rs.StepCounter / stepInterval % stepCount) steps
+            rs.ValueFunctions <- generateValueFunctions rs allSpecies
+            rs.DerivativeFunctions <- generateDerivativeFunctions rs allSpecies
+
+        rs.StepCounter <- rs.StepCounter + 1
+
         rs.NewValues <- generateValues rs allSpecies
         rs.updateValues
         rs.Time <- rs.Time + prec
         Some(rs.Values, rs))
 
-
-let simulate crn =
-    let rn = convertCRN crn
-    printfn "%O" rn
-    rn |> reactionSeq 0.001
-
-let trySimulate crnpp =
+let simulate prec stepTime crnpp =
     let result = parse crnpp
 
     match result with
-    | Result.Ok crn -> simulate crn
+    | Result.Ok crn -> convertCRN crn |> reactionSeq prec stepTime
     | Result.Error err -> failwith err
 
-//* --- Testing
+// --- Testing
 
-let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/oscillator.crnpp"
-let crnpp2 = File.ReadAllText "./CRN/Scripts/examples/oscillator2.crnpp"
-let crnpp3 = File.ReadAllText "./CRN/Scripts/examples/oscillator3.crnpp"
-let crnpp4 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
+// let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
+// let crnpp2 = File.ReadAllText "./CRN/Scripts/examples/oscillator.crnpp"
 
-trySimulate crnpp3
-|> Seq.take (15 * 1000)
-|> Seq.toList
+// simulate 0.001 20 crnpp1
+// |> Seq.take (80 * 1000)
+// |> Seq.toList

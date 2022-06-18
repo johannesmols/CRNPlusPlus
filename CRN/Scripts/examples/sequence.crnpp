@@ -1,5 +1,7 @@
 crn = {
 conc[a, 3],
+conc[b, 0],
+conc[c, 0],
 step[{
     rxn[a, b, 1]
 }],

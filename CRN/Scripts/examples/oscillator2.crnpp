@@ -1,8 +1,0 @@
-crn = {
-conc[x1, 1],
-conc[x2, 1],
-conc[x3, 0],
-step[{
-    rxn[x1+x2, x2+x2, 1]
-}]
-};
