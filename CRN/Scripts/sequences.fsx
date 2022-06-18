@@ -36,7 +36,7 @@ let A t = 6.0
 
 let C' t Ct = A t * B t - Ct
 
-let rec C t prec prev =
+let C t prec prev =
     match t with
     | _ when t <= 0.0 -> 0.0
     | _ -> prev + prec * C' (t - prec) prev
@@ -45,6 +45,7 @@ let s2 prec =
     (0.0, 0.0)
     |> Seq.unfold (fun (t, prev) ->
         let result = C t prec prev
+
         Some(result, (t + prec, result)))
 
 s2 0.001 |> Seq.take (100 * 1000) |> Seq.toList

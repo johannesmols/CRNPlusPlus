@@ -3,7 +3,7 @@
 open ReactionParser
 open System.IO
 
-
+// Conversion functions
 let convertModuleStmt =
     function
     | Load (a, b) ->
@@ -46,12 +46,50 @@ let convertCRN crn =
     let sts = crn.Statements
     convertStatements ([], []) sts
 
+// ODE functions
+
+let rec count x xs =
+    match xs with
+    | [] -> 0
+    | head :: tail when head = x -> 1 + count x tail
+    | head :: tail -> count x tail
+
+let netChange s rs ps = count s ps - count s rs
+
+type ReactionState =
+    { Values: Map<string, float>
+      ValueFunctions: Map<string, string -> float -> ReactionState -> float -> float -> float -> float>
+      DerivativeFunctions: Map<string, float -> float> }
+
+    member this.S species =
+        (this.ValueFunctions.TryFind species).Value
+
+    member this.S' species =
+        (this.DerivativeFunctions.TryFind species).Value
+
+let rs1 =
+    { Values = Map.empty
+      ValueFunctions = Map.empty
+      DerivativeFunctions = Map.empty }
+
+let rec speciesValue species prec (rs: ReactionState) startVal prevVal t =
+    match t with
+    | 0.0 -> startVal
+    | _ -> prevVal + prec * (rs.S' species) (t - prec)
+
+
+let reactantProduct (reactants: list<string>) prec (rs: ReactionState) startVal prevVal t =
+    List.fold (fun s r -> s * ((rs.S r) r prec rs startVal prevVal t)) 1.0 reactants
+
+let rec speciesDerivative species rxns =
+    List.fold (fun s (Reaction (rs, ps, FloatLiteral k)) -> s + (k * float (netChange species rs ps))) 0.0 rxns
+
+
 // TODO simulation
 let simulate crn =
     let rn = convertCRN crn
+    // rn |> constructState |> constructSequence
     rn
-
-//* --- Testing
 
 let trySimulate crnpp =
     let result = parse crnpp
@@ -59,6 +97,10 @@ let trySimulate crnpp =
     match result with
     | Result.Ok crn -> simulate crn
     | Result.Error err -> failwith err
+
+
+
+//* --- Testing
 
 let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
 
