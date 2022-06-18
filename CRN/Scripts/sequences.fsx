@@ -48,7 +48,7 @@ let s2 prec =
 
         Some(result, (t + prec, result)))
 
-s2 0.001 |> Seq.take (100 * 1000) |> Seq.toList
+s2 0.001 |> Seq.take 5 |> Seq.toList
 
 // Calculated value: 11.99945792
 // Actual value:     11.9994552; gotten from solving the equation: C(t) = 12 - 12*e^(-t)

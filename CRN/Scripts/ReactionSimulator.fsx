@@ -68,9 +68,11 @@ type ReactionState =
       mutable DerivativeFunctions: Map<string, float -> float> }
 
     member this.S species =
+        // printf "%s %s\n" "S of " species
         (this.ValueFunctions.TryFind species).Value
 
     member this.S' species =
+        // printf "%s %s\n" "S' of " species
         (this.DerivativeFunctions.TryFind species).Value
 
     member this.getVal species = (this.Values.TryFind species).Value
@@ -97,9 +99,12 @@ let reactantProduct (reactants: list<Literal>) (rs: ReactionState) t =
 let speciesDerivative (species: string) (rs: ReactionState) t =
     List.fold
         (fun s (Reaction (r, p, FloatLiteral k)) ->
-            s
-            + (k * float (netChange (SpeciesLiteral species) r p))
-            + reactantProduct r rs t)
+            let temp = (k * float (netChange (SpeciesLiteral species) r p))
+
+            if temp = 0 then
+                s
+            else
+                s + temp * reactantProduct r rs t)
         0.0
         rs.Reactions
 
@@ -116,21 +121,18 @@ let rec getInitValues cons =
     | [] -> Map.empty
     | ConcentrationStmt (SpeciesLiteral s, FloatLiteral v) :: tail -> Map.add s v (getInitValues tail)
 
-let rec generateValueFunctions rs species =
-    match species with
-    | [] -> Map.empty
-    | SpeciesLiteral (species) :: tail -> Map.add species (speciesValue species rs) (generateValueFunctions rs tail)
+let rec generateValueFunctions rs speciesList =
+    Map(List.map (fun (SpeciesLiteral s) -> (s, speciesValue s rs)) speciesList)
 
-let rec generateDerivativeFunctions rs species =
-    match species with
+let rec generateDerivativeFunctions rs speciesList =
+    match speciesList with
     | [] -> Map.empty
-    | SpeciesLiteral (species) :: tail ->
-        Map.add species (speciesDerivative species rs) (generateDerivativeFunctions rs tail)
+    | SpeciesLiteral (s) :: tail -> Map.add s (speciesDerivative s rs) (generateDerivativeFunctions rs tail)
 
-let rec generateValues (rs: ReactionState) species =
-    match species with
+let rec generateValues (rs: ReactionState) speciesList =
+    match speciesList with
     | [] -> Map.empty
-    | SpeciesLiteral (species) :: tail -> Map.add species (rs.S species rs.Time) (generateValues rs tail)
+    | SpeciesLiteral (s) :: tail -> Map.add s (rs.S s rs.Time) (generateValues rs tail)
 
 
 let reactionSeq prec (cons, steps) =
@@ -148,18 +150,14 @@ let reactionSeq prec (cons, steps) =
 
     let allSpecies = Set.toList (speciesSet step)
 
+    rs.ValueFunctions <- generateValueFunctions rs allSpecies
+    rs.DerivativeFunctions <- generateDerivativeFunctions rs allSpecies
+
     rs
     |> Seq.unfold (fun rs ->
-        rs.ValueFunctions <- generateValueFunctions rs allSpecies
-        rs.DerivativeFunctions <- generateDerivativeFunctions rs allSpecies
-
-        rs.Values <- generateValues rs allSpecies
-
-
-        // update reaction state
+        rs.NewValues <- generateValues rs allSpecies
         rs.updateValues
         rs.Time <- rs.Time + prec
-        // Return (result, new state)
         Some(rs.Values, rs))
 
 
@@ -174,7 +172,6 @@ let trySimulate crnpp =
     match result with
     | Result.Ok crn -> simulate crn
     | Result.Error err -> failwith err
-
 
 
 //* --- Testing
