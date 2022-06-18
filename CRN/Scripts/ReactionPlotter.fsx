@@ -26,7 +26,12 @@ let plotReaction s =
 
 
 let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
+let crnpp2 = File.ReadAllText "./CRN/Scripts/examples/oscillator.crnpp"
 
 trySimulate crnpp1
+|> Seq.take (15 * 1000)
+|> plotReaction
+
+trySimulate crnpp2
 |> Seq.take (15 * 1000)
 |> plotReaction
