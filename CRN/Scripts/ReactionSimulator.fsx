@@ -3,7 +3,6 @@
 open ReactionParser
 open System.IO
 
-
 // Conversion functions
 let convertModuleStmt =
     function
@@ -48,7 +47,6 @@ let convertCRN crn =
     convertStatements ([], []) sts
 
 // ODE functions
-
 let rec count x xs =
     match xs with
     | [] -> 0
@@ -68,11 +66,9 @@ type ReactionState =
       mutable DerivativeFunctions: Map<string, float -> float> }
 
     member this.S species =
-        // printf "%s %s\n" "S of " species
         (this.ValueFunctions.TryFind species).Value
 
     member this.S' species =
-        // printf "%s %s\n" "S' of " species
         (this.DerivativeFunctions.TryFind species).Value
 
     member this.getVal species = (this.Values.TryFind species).Value
@@ -94,14 +90,14 @@ let speciesValue species (rs: ReactionState) t =
 
 
 let reactantProduct (reactants: list<Literal>) (rs: ReactionState) t =
-    List.fold (fun s (SpeciesLiteral r) -> s * ((rs.S r) t)) 1.0 reactants
+    List.fold (fun s (SpeciesLiteral r) -> s * ((rs.getVal r))) 1.0 reactants
 
 let speciesDerivative (species: string) (rs: ReactionState) t =
     List.fold
         (fun s (Reaction (r, p, FloatLiteral k)) ->
             let temp = (k * float (netChange (SpeciesLiteral species) r p))
 
-            if temp = 0 then
+            if temp = 0.0 then
                 s
             else
                 s + temp * reactantProduct r rs t)
@@ -111,29 +107,19 @@ let speciesDerivative (species: string) (rs: ReactionState) t =
 let rec speciesSet step =
     match step with
     | [] -> Set.empty
-    | Reaction (reactants, products, _) :: tail ->
-        let r = Set(reactants)
-        let p = Set(products)
-        Set.union (Set.union r p) (speciesSet tail)
+    | Reaction (reactants, products, _) :: tail -> Set.union (Set(reactants @ products)) (speciesSet tail)
 
 let rec getInitValues cons =
-    match cons with
-    | [] -> Map.empty
-    | ConcentrationStmt (SpeciesLiteral s, FloatLiteral v) :: tail -> Map.add s v (getInitValues tail)
+    Map(List.map (fun (ConcentrationStmt (SpeciesLiteral s, FloatLiteral v)) -> (s, v)) cons)
 
 let rec generateValueFunctions rs speciesList =
     Map(List.map (fun (SpeciesLiteral s) -> (s, speciesValue s rs)) speciesList)
 
 let rec generateDerivativeFunctions rs speciesList =
-    match speciesList with
-    | [] -> Map.empty
-    | SpeciesLiteral (s) :: tail -> Map.add s (speciesDerivative s rs) (generateDerivativeFunctions rs tail)
+    Map(List.map (fun (SpeciesLiteral s) -> (s, speciesDerivative s rs)) speciesList)
 
 let rec generateValues (rs: ReactionState) speciesList =
-    match speciesList with
-    | [] -> Map.empty
-    | SpeciesLiteral (s) :: tail -> Map.add s (rs.S s rs.Time) (generateValues rs tail)
-
+    Map(List.map (fun (SpeciesLiteral s) -> (s, rs.S s rs.Time)) speciesList)
 
 let reactionSeq prec (cons, steps) =
     let step = List.head steps
@@ -165,7 +151,6 @@ let simulate crn =
     let rn = convertCRN crn
     rn |> reactionSeq 0.001
 
-
 let trySimulate crnpp =
     let result = parse crnpp
 
@@ -173,10 +158,10 @@ let trySimulate crnpp =
     | Result.Ok crn -> simulate crn
     | Result.Error err -> failwith err
 
-
 //* --- Testing
 
 let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
 
-let s1 = trySimulate crnpp1
-s1 |> Seq.take 5 |> Seq.toList
+trySimulate crnpp1
+|> Seq.take (15 * 1000)
+|> Seq.toList

@@ -1,3 +1,5 @@
+// Patrikas Balsys 16-06-2022
+//
 // "Brute forcing" graph values for multiplication via sequences:
 // initial values: A = 6, B = 2, C = 0
 // mul[A, B, C] produces the following derivative functions:
