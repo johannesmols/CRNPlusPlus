@@ -3,6 +3,8 @@
 open ReactionParser
 open System.IO
 
+let speciesString (SpeciesLiteral str) = str
+
 // Conversion functions
 let convertModuleStmt =
     function
@@ -14,10 +16,21 @@ let convertModuleStmt =
           Reaction([ b ], [ b; c ], FloatLiteral 1)
           Reaction([ c ], [], FloatLiteral 1) ]
     | Subtract (a, b, c) ->
+
         [ Reaction([ a ], [ a; c ], FloatLiteral 1)
-          Reaction([ b ], [ b; SpeciesLiteral("H") ], FloatLiteral 1)
+          Reaction(
+              [ b ],
+              [ b
+                SpeciesLiteral(speciesString c + "H") ],
+              FloatLiteral 1
+          )
           Reaction([ c ], [], FloatLiteral 1)
-          Reaction([ c; SpeciesLiteral("H") ], [], FloatLiteral 1) ]
+          Reaction(
+              [ c
+                SpeciesLiteral(speciesString c + "H") ],
+              [],
+              FloatLiteral 1
+          ) ]
     | Multiply (a, b, c) ->
         [ Reaction([ a; b ], [ a; b; c ], FloatLiteral 1)
           Reaction([ c ], [], FloatLiteral 1) ]
@@ -108,8 +121,11 @@ let speciesInStep step =
 let speciesInCons cons =
     Set(List.map (fun (ConcentrationStmt (s, _)) -> s) cons)
 
-let getInitValues cons =
-    Map(List.map (fun (ConcentrationStmt (SpeciesLiteral s, FloatLiteral v)) -> (s, v)) cons)
+let getInitValues species cons =
+    Map(
+        List.map (fun (SpeciesLiteral s) -> (s, 0.0)) species
+        @ List.map (fun (ConcentrationStmt (SpeciesLiteral s, FloatLiteral v)) -> (s, v)) cons
+    )
 
 let generateValueFunctions rs speciesList =
     Map(List.map (fun (SpeciesLiteral s) -> (s, speciesValue s rs)) speciesList)
@@ -124,21 +140,24 @@ let generateValues (rs: ReactionState) speciesList =
 let reactionSeq prec stepTime (cons, steps) =
     let stepCount = List.length steps
     let stepInterval = stepTime * int (1.0 / prec)
-    let firstStep = List.head steps
+
+    let allSpecies =
+        Set.toList (
+            Set.union
+                (List.fold (fun all step -> Set.union all (speciesInStep step)) Set.empty steps)
+                (speciesInCons cons)
+        )
 
     let reactionState =
         { StepCounter = 0
           Time = 0.0
           Precision = prec
           Reactions = []
-          InitialValues = getInitValues cons
-          Values = getInitValues cons
+          InitialValues = getInitValues allSpecies cons // TODO remove, use just Values instead
+          Values = getInitValues allSpecies cons
           NewValues = Map.empty
           ValueFunctions = Map.empty
           DerivativeFunctions = Map.empty }
-
-    let allSpecies =
-        Set.toList (Set.union (speciesInStep firstStep) (speciesInCons cons))
 
     reactionState
     |> Seq.unfold (fun rs ->
@@ -147,9 +166,7 @@ let reactionSeq prec stepTime (cons, steps) =
             rs.ValueFunctions <- generateValueFunctions rs allSpecies
             rs.DerivativeFunctions <- generateDerivativeFunctions rs allSpecies
 
-
         rs.StepCounter <- rs.StepCounter + 1
-
         rs.NewValues <- generateValues rs allSpecies
         rs.updateValues
         rs.Time <- rs.Time + prec
@@ -164,9 +181,9 @@ let simulate prec stepTime crnpp =
 
 // --- Testing
 
-// let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
-// let crnpp2 = File.ReadAllText "./CRN/Scripts/examples/oscillator.crnpp"
+// let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/basic/mul.crnpp"
+// let crnpp2 = File.ReadAllText "./CRN/Scripts/examples/basic/ld.crnpp"
 
-// simulate 0.001 20 crnpp1
-// |> Seq.take (80 * 1000)
+// simulate 0.001 20 crnpp2
+// |> Seq.take (20 * 1000)
 // |> Seq.toList

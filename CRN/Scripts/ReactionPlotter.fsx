@@ -29,9 +29,9 @@ let plotReaction prec stepTime maxTime crn =
     |> Chart.show
 
 
-let crnLd = File.ReadAllText "./CRN/Scripts/examples/basic/ld.crnpp"
+// let crnLd = File.ReadAllText "./CRN/Scripts/examples/basic/ld.crnpp"
 // let crnAdd = File.ReadAllText "./CRN/Scripts/examples/basic/add.crnpp"
-let crnSub = File.ReadAllText "./CRN/Scripts/examples/basic/sub.crnpp"
+// let crnSub = File.ReadAllText "./CRN/Scripts/examples/basic/sub.crnpp"
 // let crnMul = File.ReadAllText "./CRN/Scripts/examples/basic/mul.crnpp"
 // let crnDiv = File.ReadAllText "./CRN/Scripts/examples/basic/div.crnpp"
 // let crnSqrt = File.ReadAllText "./CRN/Scripts/examples/basic/sqrt.crnpp"
@@ -39,4 +39,4 @@ let crnSub = File.ReadAllText "./CRN/Scripts/examples/basic/sub.crnpp"
 let crnOsc = File.ReadAllText "./CRN/Scripts/examples/oscillator.crnpp"
 let crnSeq = File.ReadAllText "./CRN/Scripts/examples/sequence.crnpp"
 
-plotReaction 0.001 20 100 crnLd
+plotReaction 0.001 20 100 crnSub
