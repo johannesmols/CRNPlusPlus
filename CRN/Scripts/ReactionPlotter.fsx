@@ -21,8 +21,8 @@ let toCharts prec maxTime (s: seq<Map<string, float>>) =
     let xs = [ 0.0 .. (prec) .. float (maxTime) ]
     toCharts' xs values speciesList
 
-let plotReaction prec stepTime maxTime crn =
-    simulate prec stepTime crn
+let plotReaction prec stepTime maxTime crn args =
+    simulate prec stepTime crn args
     |> Seq.take (maxTime * int (1.0 / prec))
     |> toCharts prec maxTime
     |> Chart.combine
@@ -38,5 +38,7 @@ let plotReaction prec stepTime maxTime crn =
 
 let crnOsc = File.ReadAllText "./CRN/Scripts/examples/oscillator.crnpp"
 let crnSeq = File.ReadAllText "./CRN/Scripts/examples/sequence.crnpp"
+let crnCou = File.ReadAllText "./CRN/Scripts/examples/counter.crnpp"
+let crnGcd = File.ReadAllText "./CRN/Scripts/examples/gcd.crnpp"
 
-plotReaction 0.001 20 100 crnSub
+plotReaction 0.001 20 200 crnCou (Map [ ("a0", 3.0) ])

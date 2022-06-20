@@ -3,57 +3,90 @@
 open ReactionParser
 open System.IO
 
-let speciesString (SpeciesLiteral str) = str
+type Rxn = Rxn of string list * string list * float
+type Cmp = Cmp of string * string
+type Step = Step of Rxn list * Rxn list * Rxn list * Rxn list * Rxn list * Rxn list * Option<Cmp>
 
 // Conversion functions
 let convertModuleStmt =
     function
-    | Load (a, b) ->
-        [ Reaction([ a ], [ a; b ], FloatLiteral 1)
-          Reaction([ b ], [], FloatLiteral 1) ]
-    | Add (a, b, c) ->
-        [ Reaction([ a ], [ a; c ], FloatLiteral 1)
-          Reaction([ b ], [ b; c ], FloatLiteral 1)
-          Reaction([ c ], [], FloatLiteral 1) ]
-    | Subtract (a, b, c) ->
+    | Load (SpeciesLiteral a, SpeciesLiteral b) ->
+        [ Rxn([ a ], [ a; b ], 1)
+          Rxn([ b ], [], 1) ]
+    | Add (SpeciesLiteral a, SpeciesLiteral b, SpeciesLiteral c) ->
+        [ Rxn([ a ], [ a; c ], 1)
+          Rxn([ b ], [ b; c ], 1)
+          Rxn([ c ], [], 1) ]
+    | Subtract (SpeciesLiteral a, SpeciesLiteral b, SpeciesLiteral c) ->
+        [ Rxn([ a ], [ a; c ], 1)
+          Rxn([ b ], [ b; c + "H" ], 1)
+          Rxn([ c ], [], 1)
+          Rxn([ c; c + "H" ], [], 1) ]
+    | Multiply (SpeciesLiteral a, SpeciesLiteral b, SpeciesLiteral c) ->
+        [ Rxn([ a; b ], [ a; b; c ], 1)
+          Rxn([ c ], [], 1) ]
+    | Divide (SpeciesLiteral a, SpeciesLiteral b, SpeciesLiteral c) ->
+        [ Rxn([ a ], [ a; c ], 1)
+          Rxn([ b; c ], [ b ], 1) ]
+    | SquareRoot (SpeciesLiteral a, SpeciesLiteral b) ->
+        [ Rxn([ a ], [ a; b ], 1)
+          Rxn([ b; b ], [], 0.5) ]
+    | _ -> []
 
-        [ Reaction([ a ], [ a; c ], FloatLiteral 1)
-          Reaction(
-              [ b ],
-              [ b
-                SpeciesLiteral(speciesString c + "H") ],
-              FloatLiteral 1
-          )
-          Reaction([ c ], [], FloatLiteral 1)
-          Reaction(
-              [ c
-                SpeciesLiteral(speciesString c + "H") ],
-              [],
-              FloatLiteral 1
+let convertReactionStmt =
+    function
+    | Reaction (rs, ps, FloatLiteral k) ->
+        [ Rxn(
+              List.map
+                  (function
+                  | (SpeciesLiteral r) -> r
+                  | _ -> failwith "invalid reaction statement")
+                  rs,
+              List.map
+                  (function
+                  | (SpeciesLiteral p) -> p
+                  | _ -> failwith "invalid reaction statement")
+                  ps,
+              k
           ) ]
-    | Multiply (a, b, c) ->
-        [ Reaction([ a; b ], [ a; b; c ], FloatLiteral 1)
-          Reaction([ c ], [], FloatLiteral 1) ]
-    | Divide (a, b, c) ->
-        [ Reaction([ a ], [ a; c ], FloatLiteral 1)
-          Reaction([ b; c ], [ b ], FloatLiteral 1) ]
-    | SquareRoot (a, b) ->
-        [ Reaction([ a ], [ a; b ], FloatLiteral 1)
-          Reaction([ b; b ], [], FloatLiteral 0.5) ]
-    | Compare (a, b) -> [ Reaction([], [], FloatLiteral 1) ]
+    | _ -> []
 
-let rec convertCommands =
+let rec convertCommands' =
     function
     | [] -> []
-    | ConditionalStmt (_) :: tail -> convertCommands tail
-    | ModuleStmt (ms) :: tail -> convertModuleStmt ms @ convertCommands tail
-    | ReactionStmt (rs) :: tail -> [ rs ] @ convertCommands tail
+    | ConditionalStmt _ :: tail -> convertCommands' tail
+    | ModuleStmt (Compare (SpeciesLiteral a, SpeciesLiteral b)) :: tail -> convertCommands' tail
+    | ModuleStmt (ms) :: tail -> convertModuleStmt ms @ convertCommands' tail
+    | ReactionStmt (rs) :: tail -> convertReactionStmt rs @ convertCommands' tail
+
+let rec convertCommands (Step (d, GT, GE, EQ, LT, LE, cmp)) =
+    function
+    | [] -> Step(d, GT, GE, EQ, LT, LE, cmp)
+    | ConditionalStmt (IfGreaterThan cmds) :: tail ->
+        convertCommands (Step(d, convertCommands' cmds @ GT, GE, EQ, LT, LE, cmp)) tail
+    | ConditionalStmt (IfGreaterThanOrEquals cmds) :: tail ->
+        convertCommands (Step(d, GT, convertCommands' cmds @ GE, EQ, LT, LE, cmp)) tail
+    | ConditionalStmt (IfEquals cmds) :: tail ->
+        convertCommands (Step(d, GT, GE, convertCommands' cmds @ EQ, LT, LE, cmp)) tail
+    | ConditionalStmt (IfLesserThan cmds) :: tail ->
+        convertCommands (Step(d, GT, GE, EQ, convertCommands' cmds @ LT, LE, cmp)) tail
+    | ConditionalStmt (IfLesserThanOrEquals cmds) :: tail ->
+        convertCommands (Step(d, GT, GE, EQ, LT, convertCommands' cmds @ LE, cmp)) tail
+    | ModuleStmt (Compare (SpeciesLiteral a, SpeciesLiteral b)) :: tail ->
+        convertCommands (Step(d, GT, GE, EQ, LT, LE, Some(Cmp(a, b)))) tail
+    | ModuleStmt (ms) :: tail -> convertCommands (Step(convertModuleStmt ms @ d, GT, GE, EQ, LT, LE, cmp)) tail
+    | ReactionStmt (rs) :: tail -> convertCommands (Step(convertReactionStmt rs @ d, GT, GE, EQ, LT, LE, cmp)) tail
 
 let rec convertStatements (cons, steps) =
     function
     | [] -> (cons, steps)
     | ConcentrationStmt (l1, l2) :: tail -> convertStatements (cons @ [ ConcentrationStmt(l1, l2) ], steps) tail
-    | StepStmt (cmds) :: tail -> convertStatements (cons, steps @ [ convertCommands cmds ]) tail
+    | StepStmt (cmds) :: tail ->
+        convertStatements
+            (cons,
+             steps
+             @ [ convertCommands (Step([], [], [], [], [], [], None)) cmds ])
+            tail
 
 let convertCRN crn =
     let sts = crn.Statements
@@ -64,7 +97,7 @@ type ReactionState =
     { mutable StepCounter: int
       mutable Time: float
       mutable Precision: float
-      mutable Reactions: ReactionStmt list
+      mutable Reactions: Rxn list
       mutable InitialValues: Map<string, float>
       mutable Values: Map<string, float>
       mutable NewValues: Map<string, float>
@@ -99,13 +132,13 @@ let speciesValue species (rs: ReactionState) t =
         rs.getVal species
         + rs.Precision * (rs.S' species) (t - rs.Precision)
 
-let reactantProduct (reactants: list<Literal>) (rs: ReactionState) t =
-    List.fold (fun s (SpeciesLiteral r) -> s * ((rs.getVal r))) 1.0 reactants
+let reactantProduct reactants (rs: ReactionState) t =
+    List.fold (fun s (r) -> s * ((rs.getVal r))) 1.0 reactants
 
 let speciesDerivative (species: string) (rs: ReactionState) t =
     List.fold
-        (fun s (Reaction (r, p, FloatLiteral k)) ->
-            let temp = (k * float (netChange (SpeciesLiteral species) r p))
+        (fun s (Rxn (r, p, k)) ->
+            let temp = (k * float (netChange (species) r p))
 
             if temp = 0.0 then
                 s
@@ -115,36 +148,67 @@ let speciesDerivative (species: string) (rs: ReactionState) t =
         rs.Reactions
 
 // Helper functions
-let speciesInStep step =
-    Set(List.fold (fun acc (Reaction (reacts, prods, _)) -> acc @ reacts @ prods) [] step)
+let speciesInReactions step =
+    Set(List.fold (fun acc (Rxn (reacts, prods, _)) -> acc @ reacts @ prods) [] step)
 
 let speciesInCons cons =
-    Set(List.map (fun (ConcentrationStmt (s, _)) -> s) cons)
+    Set(
+        List.map
+            (function
+            | (ConcentrationStmt (SpeciesLiteral s, _)) -> s
+            | _ -> failwith "invalid concentration statement inside cons")
+            cons
+    )
 
-let getInitValues species cons =
+let getInitValues species cons args =
     Map(
-        List.map (fun (SpeciesLiteral s) -> (s, 0.0)) species
-        @ List.map (fun (ConcentrationStmt (SpeciesLiteral s, FloatLiteral v)) -> (s, v)) cons
+        List.map (fun (s) -> (s, 0.0)) species
+        @ List.map
+            (function
+            | (ConcentrationStmt (SpeciesLiteral s, FloatLiteral v)) -> (s, v)
+            | (ConcentrationStmt (SpeciesLiteral s, SpeciesLiteral v)) -> (s, Map.find v args)
+            | _ -> failwith "invalid concentration statement inside cons")
+            cons
     )
 
 let generateValueFunctions rs speciesList =
-    Map(List.map (fun (SpeciesLiteral s) -> (s, speciesValue s rs)) speciesList)
+    Map(List.map (fun (s) -> (s, speciesValue s rs)) speciesList)
 
 let generateDerivativeFunctions rs speciesList =
-    Map(List.map (fun (SpeciesLiteral s) -> (s, speciesDerivative s rs)) speciesList)
+    Map(List.map (fun (s) -> (s, speciesDerivative s rs)) speciesList)
 
 let generateValues (rs: ReactionState) speciesList =
-    Map(List.map (fun (SpeciesLiteral s) -> (s, rs.S s rs.Time)) speciesList)
+    Map(List.map (fun (s) -> (s, rs.S s rs.Time)) speciesList)
+
+let compare a b =
+    if abs (a - b) < 0.5 then 0
+    else if a > b then 1
+    else -1
+
+let getReactions (rs: ReactionState) (Step (d, GT, GE, EQ, LT, LE, _)) prevCmp =
+    match prevCmp with
+    | Some (Cmp (a, b)) ->
+        match compare (rs.getVal a) (rs.getVal b) with
+        | 1 -> d @ GT @ GE
+        | -1 -> d @ LT @ LE
+        | _ -> d @ GE @ EQ @ LE
+    | None -> d
+
+let flattenStep (Step (d, GT, GE, EQ, LT, LE, _)) = d @ GT @ GE @ EQ @ LT @ LE
+
+let getCmp (Step (_, _, _, _, _, _, cmp)) = cmp
 
 // Reaction sequence
-let reactionSeq prec stepTime (cons, steps) =
+let reactionSeq prec stepTime (cons, steps: list<Step>) args =
     let stepCount = List.length steps
     let stepInterval = stepTime * int (1.0 / prec)
+
+
 
     let allSpecies =
         Set.toList (
             Set.union
-                (List.fold (fun all step -> Set.union all (speciesInStep step)) Set.empty steps)
+                (List.fold (fun all step -> Set.union all (speciesInReactions (flattenStep step))) Set.empty steps)
                 (speciesInCons cons)
         )
 
@@ -153,8 +217,8 @@ let reactionSeq prec stepTime (cons, steps) =
           Time = 0.0
           Precision = prec
           Reactions = []
-          InitialValues = getInitValues allSpecies cons // TODO remove, use just Values instead
-          Values = getInitValues allSpecies cons
+          InitialValues = getInitValues allSpecies cons args // TODO remove, use just Values instead
+          Values = getInitValues allSpecies cons args
           NewValues = Map.empty
           ValueFunctions = Map.empty
           DerivativeFunctions = Map.empty }
@@ -162,7 +226,16 @@ let reactionSeq prec stepTime (cons, steps) =
     reactionState
     |> Seq.unfold (fun rs ->
         if rs.StepCounter % stepInterval = 0 then
-            rs.Reactions <- List.item (rs.StepCounter / stepInterval % stepCount) steps
+            let stepIndex = (rs.StepCounter / stepInterval) % stepCount
+            let step = List.item stepIndex steps
+
+            let prevCmp =
+                if stepIndex = 0 then
+                    None
+                else
+                    List.item (stepIndex - 1) steps |> getCmp
+
+            rs.Reactions <- getReactions rs step prevCmp
             rs.ValueFunctions <- generateValueFunctions rs allSpecies
             rs.DerivativeFunctions <- generateDerivativeFunctions rs allSpecies
 
@@ -181,9 +254,10 @@ let simulate prec stepTime crnpp =
 
 // --- Testing
 
-// let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/basic/mul.crnpp"
-// let crnpp2 = File.ReadAllText "./CRN/Scripts/examples/basic/ld.crnpp"
+// let crn1 = File.ReadAllText "./CRN/Scripts/examples/basic/mul.crnpp"
+// let crn2 = File.ReadAllText "./CRN/Scripts/examples/basic/ld.crnpp"
+let crn3 = File.ReadAllText "./CRN/Scripts/examples/counter.crnpp"
 
-// simulate 0.001 20 crnpp2
-// |> Seq.take (20 * 1000)
-// |> Seq.toList
+simulate 0.001 20 crn3 (Map [ ("a0", 3.0) ])
+|> Seq.take (200 * 1000)
+|> Seq.toList

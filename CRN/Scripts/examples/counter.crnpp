@@ -1,5 +1,5 @@
 crn = {
-conc[c,c0], conc[cInitial,c0],
+conc[c,a0], conc[cInitial,a0],
 conc[one,1], conc[zero,0],
 step[{
     sub[c,one,cnext],
