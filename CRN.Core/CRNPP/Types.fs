@@ -1,8 +1,14 @@
-﻿module CRN.Core.CRNPP.Types
+﻿// Johannes Mols, 15-06-2022
+// Patrikas Balsys, 20-06-2022: Added reaction statements
+
+module CRN.Core.CRNPP.Types
 
 type Literal =
     | SpeciesLiteral of string
     | FloatLiteral of float
+    
+type ReactionStmt =
+    | Reaction of Literal list * Literal list * Literal
 
 type ModuleStmt =
     | Load of Literal * Literal
@@ -23,6 +29,7 @@ type ConditionalStmt =
 and Command =
     | ConditionalStmt of ConditionalStmt
     | ModuleStmt of ModuleStmt
+    | ReactionStmt of ReactionStmt
 
 type Statement =
     | ConcentrationStmt of Literal * Literal

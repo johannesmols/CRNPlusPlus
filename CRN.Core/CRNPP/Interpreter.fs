@@ -1,4 +1,6 @@
-﻿module CRN.Core.CRNPP.Interpreter
+﻿// Johannes Mols, 15-06-2022
+
+module CRN.Core.CRNPP.Interpreter
 
 open CRN.Core.CRNPP.Types
 
@@ -93,6 +95,7 @@ let simulateStep (state: State) (step: Statement) =
                 match cmd with
                 | ModuleStmt m -> moduleStmt state m
                 | ConditionalStmt c -> conditionalStmt state c
+                | ReactionStmt _ -> failwith "This interpreter does not support reaction statements. Please use the other one."
             simulate newState rem
     
     match step with

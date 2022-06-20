@@ -1,3 +1,6 @@
+// Johannes Mols, 15-06-2022: Entire parser
+// Patrikas Balsys, 20-06-2022: Added RXN statement parsing
+
 module CRN.Core.CRNPP.Parser
 
 open CRN.Core.CRNPP.Types
@@ -78,6 +81,22 @@ let ifLE = conditionalStmtMaker "ifLE" ConditionalStmt.IfLesserThanOrEquals
 
 let conditionalStmt = choice [ ifGT; ifGE; ifEQ; ifLT; ifLE ] |>> Command.ConditionalStmt
 
+// Reaction statement parser
+let expression = sepBy1 speciesLiteral (symbol "+")
+
+let reactionStmt =
+    symbol "rxn"
+    >>. symbol "["
+    >>. expression
+    .>> symbol ","
+    .>>. expression
+    .>> symbol ","
+    .>>. floatLiteral
+    .>> symbol "]"
+    |>> (fun ((a, b), c) -> a, b, c)
+    |>> Reaction
+    |>> ReactionStmt
+
 // Step parser
 let step =
     symbol "step"
@@ -88,7 +107,7 @@ let step =
     |>> Statement.StepStmt
     
 // Command parser, declare actual parser after all necessary parsers in between are defined
-commandRef.Value <- (moduleStmt <|> conditionalStmt)
+commandRef.Value <- (moduleStmt <|> conditionalStmt <|> reactionStmt)
     
 // Statement parser
 let statement = (concentration <|> step)
