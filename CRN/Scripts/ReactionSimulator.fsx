@@ -116,7 +116,6 @@ type ReactionState =
       mutable Precision: float
       mutable Reactions: Rxn list
       mutable Compare: Option<Cmp>
-      mutable InitialValues: Map<string, float>
       mutable Values: Map<string, float>
       mutable NewValues: Map<string, float>
       mutable ValueFunctions: Map<string, float -> float>
@@ -130,9 +129,6 @@ type ReactionState =
 
     member this.getVal species = (this.Values.TryFind species).Value
 
-    member this.getInitVal species =
-        (this.InitialValues.TryFind species).Value
-
     member this.updateValues = this.Values <- this.NewValues
 
 // Counts occurences of x in xs
@@ -140,7 +136,7 @@ let rec count x xs =
     match xs with
     | [] -> 0
     | head :: tail when head = x -> 1 + count x tail
-    | head :: tail -> count x tail
+    | _ :: tail -> count x tail
 
 // Net change of a species in a reaction
 let netChange s reactants products = count s products - count s reactants
@@ -148,25 +144,25 @@ let netChange s reactants products = count s products - count s reactants
 // Value function of a species, current value is based on previous value and derivative
 let speciesValue species (rs: ReactionState) t =
     match t with
-    | 0.0 -> rs.getInitVal species
+    | 0.0 -> rs.getVal species
     | _ ->
         rs.getVal species
         + rs.Precision * (rs.S' species) (t - rs.Precision)
 
 // Reactant product (used for the derivative function)
-let reactantProduct reactants (rs: ReactionState) t =
+let rProd reactants (rs: ReactionState) t =
     List.fold (fun s (r) -> s * ((rs.getVal r))) 1.0 reactants
 
 // Derivative function of a species
 let speciesDerivative (species: string) (rs: ReactionState) t =
     List.fold
         (fun s (Rxn (r, p, k)) ->
-            let temp = (k * float (netChange (species) r p))
+            let temp = k * float (netChange (species) r p)
 
             if temp = 0.0 then
                 s
             else
-                s + temp * reactantProduct r rs t)
+                s + t * rProd r rs t)
         0.0
         rs.Reactions
 
@@ -254,7 +250,6 @@ let reactionSeq prec stepTime args (cons, steps: list<Step>) =
           Precision = prec
           Reactions = []
           Compare = None
-          InitialValues = getInitValues allSpecies cons args // TODO remove, use just Values instead
           Values = getInitValues allSpecies cons args
           NewValues = Map.empty
           ValueFunctions = Map.empty

@@ -5,6 +5,7 @@ open ReactionSimulator
 open Plotly.NET
 open System.IO
 
+// Constructs charts from a list of mapped values
 let rec toCharts' xs (values: list<Map<string, float>>) speciesList =
     match speciesList with
     | [] -> []
@@ -14,6 +15,7 @@ let rec toCharts' xs (values: list<Map<string, float>>) speciesList =
         Chart.Line(xs, speciesSequence, Name = species)
         :: toCharts' xs values tail
 
+// Constructs charts for all species in the reaction
 let toCharts prec maxTime (s: seq<Map<string, float>>) =
     let values = Seq.toList s
     let firstPoint = List.item 0 values
@@ -21,6 +23,7 @@ let toCharts prec maxTime (s: seq<Map<string, float>>) =
     let xs = [ 0.0 .. (prec) .. float (maxTime) ]
     toCharts' xs values speciesList
 
+// Plots a reaction sequence
 let plotReaction prec stepTime maxTime crn args =
     simulate prec stepTime crn args
     |> Seq.take (maxTime * int (1.0 / prec))
