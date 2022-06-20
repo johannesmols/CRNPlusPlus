@@ -40,7 +40,7 @@ let moduleStmt2SpeciesMaker id stmt =
     |>> stmt
 
 let moduleStmt3SpeciesMaker id stmt =
-    symbol $"{id}"
+    symbol id
     >>. symbol "["
     >>. speciesLiteral
     .>> symbol ","
@@ -66,7 +66,7 @@ let command, commandRef = createParserForwardedToRef<Command, unit>()
 
 // Conditional statement parsers
 let conditionalStmtMaker id stmt =
-    symbol $"{id}"
+    symbol id
     >>. symbol "["
     >>. symbol "{"
     >>. many (command .>> (attempt skipComma <|> (symbol "}" |>> ignore)))
