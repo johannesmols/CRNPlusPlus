@@ -147,6 +147,7 @@ let reactionSeq prec stepTime (cons, steps) =
             rs.ValueFunctions <- generateValueFunctions rs allSpecies
             rs.DerivativeFunctions <- generateDerivativeFunctions rs allSpecies
 
+
         rs.StepCounter <- rs.StepCounter + 1
 
         rs.NewValues <- generateValues rs allSpecies

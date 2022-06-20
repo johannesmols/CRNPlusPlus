@@ -28,8 +28,15 @@ let plotReaction prec stepTime maxTime crn =
     |> Chart.combine
     |> Chart.show
 
-let crnpp1 = File.ReadAllText "./CRN/Scripts/examples/multiplication.crnpp"
-let crnpp2 = File.ReadAllText "./CRN/Scripts/examples/oscillator.crnpp"
-let crnpp3 = File.ReadAllText "./CRN/Scripts/examples/sequence.crnpp"
 
-plotReaction 0.001 20 100 crnpp3
+let crnLd = File.ReadAllText "./CRN/Scripts/examples/basic/ld.crnpp"
+// let crnAdd = File.ReadAllText "./CRN/Scripts/examples/basic/add.crnpp"
+let crnSub = File.ReadAllText "./CRN/Scripts/examples/basic/sub.crnpp"
+// let crnMul = File.ReadAllText "./CRN/Scripts/examples/basic/mul.crnpp"
+// let crnDiv = File.ReadAllText "./CRN/Scripts/examples/basic/div.crnpp"
+// let crnSqrt = File.ReadAllText "./CRN/Scripts/examples/basic/sqrt.crnpp"
+
+let crnOsc = File.ReadAllText "./CRN/Scripts/examples/oscillator.crnpp"
+let crnSeq = File.ReadAllText "./CRN/Scripts/examples/sequence.crnpp"
+
+plotReaction 0.001 20 100 crnLd

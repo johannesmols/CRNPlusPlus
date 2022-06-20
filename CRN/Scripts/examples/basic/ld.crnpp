@@ -1,0 +1,6 @@
+crn = {
+conc[a, 4],
+step[{
+    ld[a, b]
+}]
+};

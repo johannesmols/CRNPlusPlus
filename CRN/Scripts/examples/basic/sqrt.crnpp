@@ -1,0 +1,7 @@
+crn = {
+conc[a, 4],
+conc[b, 0],
+step[{
+    sqrt[a, b]
+}]
+};
