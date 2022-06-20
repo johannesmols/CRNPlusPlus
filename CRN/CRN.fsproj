@@ -13,6 +13,9 @@
         <Content Include="Scripts\examples\oscillator.crnpp" />
         <Content Include="Scripts\examples\multiplication.crnpp" />
         <Content Include="Scripts\examples\counter.crnpp" />
+        <None Include="Scripts\ReactionParser.fsx" />
+        <None Include="Scripts\ReactionPlotter.fsx" />
+        <None Include="Scripts\ReactionSimulator.fsx" />
     </ItemGroup>
 
     <ItemGroup>
