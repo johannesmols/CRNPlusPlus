@@ -47,18 +47,52 @@ let moduleOutputSpeciesAreDifferentFromInput crn =
     crn.Statements
     |> List.forall stmtSatisfiesRules
     
+/// Check that statements within single steps are not conflicting. Conflicting statements are:
+/// 1. Comparison and conditional execution cannot happen in the same step, as comparison needs to be done beforehand
+/// 2. Reading and writing to the same species
 let statementsAreNotConflicting crn =
-    true // TODO
+    let comparisonAndConditionalExecutionAreSeparated crn =    
+        let rec cmdContainsComparison = function
+            | ModuleStmt m ->
+                match m with
+                | Compare _ -> true
+                | _ -> false
+            | ConditionalStmt c ->
+                match c with
+                | IfGreaterThan c | IfGreaterThanOrEquals c | IfEquals c | IfLesserThan c | IfLesserThanOrEquals c ->
+                    c |> List.forall cmdContainsComparison
+        
+        crn.Statements
+        |> List.choose (fun s ->
+            match s with
+            | ConcentrationStmt _ -> None
+            | StepStmt cmds -> Some cmds)
+        |> List.forall (fun cmds ->
+            let hasComparison = cmds |> List.exists cmdContainsComparison
+            let hasConditional = cmds |> List.exists (fun c -> match c with | ConditionalStmt _ -> true | _ -> false)
+            not(hasComparison && hasConditional))
+        
+    let noReadingAndWritingToSameSpecies crn =
+        true
+    
+    if not(comparisonAndConditionalExecutionAreSeparated crn) then
+        Result.Error "Comparison module and conditional statements cannot be used in the same step"
+    else if not(noReadingAndWritingToSameSpecies crn) then
+        Result.Error "Can't read and write to the same species in the same step"
+    else
+        Result.Ok crn
 
 /// Analyze a CRN for semantic errors and return either an error or the program if everything is fine
 let analyze (crn: Crn) : Result<Crn, string> =
     let crn = { crn with Arguments = extractMissingArguments crn }
     
+    let conflictingResult = statementsAreNotConflicting crn
+    
     if not(concentrationsAreDefinedBeforeSteps crn) then
         Result.Error "All concentration declarations must happen before any steps."
     else if not(moduleOutputSpeciesAreDifferentFromInput crn) then
         Result.Error "Module statements must not have an output that is the same as an input."
-    else if not(statementsAreNotConflicting crn) then
-        Result.Error "Statements within a step module are conflicting."
+    else if (match conflictingResult with | Error err -> true | Ok _ -> false) then
+        conflictingResult
     else
         Result.Ok crn
