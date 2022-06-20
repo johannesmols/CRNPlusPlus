@@ -46,6 +46,7 @@ let moduleOutputSpeciesAreDifferentFromInput crn =
                 match conditionalStmt with
                 | IfGreaterThan c | IfGreaterThanOrEquals c | IfEquals c | IfLesserThan c | IfLesserThanOrEquals c ->
                     c |> List.forall cmdSatisfiesRules
+            | ReactionStmt _ -> true // Ignore reaction statements
         
         match s with
         | ConcentrationStmt _ -> true
@@ -68,6 +69,7 @@ let statementsAreNotConflicting crn =
                 match c with
                 | IfGreaterThan c | IfGreaterThanOrEquals c | IfEquals c | IfLesserThan c | IfLesserThanOrEquals c ->
                     c |> List.forall cmdContainsComparison
+            | ReactionStmt _ -> false // Ignore reaction statements
         
         getStepStatements crn
         |> List.forall (fun cmds ->
@@ -96,6 +98,7 @@ let statementsAreNotConflicting crn =
                     | Compare(SpeciesLiteral i, SpeciesLiteral t) -> i::t::read, write
                     | _ -> failwith "Attempted to use float literals in module statements."
                     |> fun (r, w) -> constructReadWriteTable r w rest
+                | ReactionStmt _ -> constructReadWriteTable read write rest // Ignore reactions statements
         
         getStepStatements crn
         |> List.map (fun cmds -> cmds |> constructReadWriteTable [] [])
