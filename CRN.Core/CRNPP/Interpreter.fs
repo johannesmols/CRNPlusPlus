@@ -1,4 +1,6 @@
-﻿module CRN.Core.CRNPP.Interpreter
+﻿// Johannes Mols, 15-06-2022
+
+module CRN.Core.CRNPP.Interpreter
 
 open CRN.Core.CRNPP.Types
 

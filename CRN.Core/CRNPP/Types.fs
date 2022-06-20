@@ -1,4 +1,6 @@
-﻿module CRN.Core.CRNPP.Types
+﻿// Johannes Mols, 15-06-2022
+
+module CRN.Core.CRNPP.Types
 
 type Literal =
     | SpeciesLiteral of string
