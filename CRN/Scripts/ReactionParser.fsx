@@ -29,12 +29,12 @@ and Command =
     | ModuleStmt of ModuleStmt
     | ReactionStmt of ReactionStmt
 
-type Statements =
+type Statement =
     | ConcentrationStmt of Literal * Literal
     | StepStmt of Command list
 
 type Crn =
-    { Statements: Statements list
+    { Statements: Statement list
       Arguments: string list }
 
 // Basic parsers
@@ -44,29 +44,32 @@ let symbol s = pstring s |> token
 let skipComma = symbol "," |> skipMany1
 
 // Literal parsers
-let floatLiteral = pfloat |>> FloatLiteral .>> ws
+let floatLiteral = pfloat |>> Literal.FloatLiteral .>> ws
 
 let speciesLiteral =
     many1Chars (asciiLetter <|> digit)
-    |>> SpeciesLiteral
+    |>> Literal.SpeciesLiteral
     |> token
 
 // Concentration statement parser
 let concentration =
-    symbol "conc[" >>. speciesLiteral .>> symbol ","
+    symbol "conc" >>. symbol "[" >>. speciesLiteral
+    .>> symbol ","
     .>>. (floatLiteral <|> speciesLiteral)
     .>> symbol "]"
-    |>> ConcentrationStmt
+    |>> Statement.ConcentrationStmt
 
 // Module statement parsers
 let moduleStmt2SpeciesMaker id stmt =
-    symbol $"{id}[" >>. speciesLiteral .>> symbol ","
+    symbol id >>. symbol "[" >>. speciesLiteral
+    .>> symbol ","
     .>>. speciesLiteral
     .>> symbol "]"
     |>> stmt
 
 let moduleStmt3SpeciesMaker id stmt =
-    symbol $"{id}[" >>. speciesLiteral .>> symbol ","
+    symbol id >>. symbol "[" >>. speciesLiteral
+    .>> symbol ","
     .>>. speciesLiteral
     .>> symbol ","
     .>>. speciesLiteral
@@ -74,13 +77,13 @@ let moduleStmt3SpeciesMaker id stmt =
     |>> fun ((a, b), c) -> a, b, c
     |>> stmt
 
-let load = moduleStmt2SpeciesMaker "ld" Load
-let sqrt = moduleStmt2SpeciesMaker "sqrt" SquareRoot
-let cmp = moduleStmt2SpeciesMaker "cmp" Compare
-let add = moduleStmt3SpeciesMaker "add" Add
-let sub = moduleStmt3SpeciesMaker "sub" Subtract
-let mul = moduleStmt3SpeciesMaker "mul" Multiply
-let div = moduleStmt3SpeciesMaker "div" Divide
+let load = moduleStmt2SpeciesMaker "ld" ModuleStmt.Load
+let sqrt = moduleStmt2SpeciesMaker "sqrt" ModuleStmt.SquareRoot
+let cmp = moduleStmt2SpeciesMaker "cmp" ModuleStmt.Compare
+let add = moduleStmt3SpeciesMaker "add" ModuleStmt.Add
+let sub = moduleStmt3SpeciesMaker "sub" ModuleStmt.Subtract
+let mul = moduleStmt3SpeciesMaker "mul" ModuleStmt.Multiply
+let div = moduleStmt3SpeciesMaker "div" ModuleStmt.Divide
 
 let moduleStmt =
     choice [ load
@@ -90,58 +93,61 @@ let moduleStmt =
              sub
              mul
              div ]
-    |>> ModuleStmt
+    |>> Command.ModuleStmt
 
 // Command parser, forward created for recursive usage
 let command, commandRef = createParserForwardedToRef<Command, unit> ()
 
 // Conditional statement parsers
 let conditionalStmtMaker id stmt =
-    symbol $"{id}[" >>. symbol "{" >>. many command
-    .>> symbol "}"
-    .>> symbol "]"
-    |>> stmt
-
-let ifGT = conditionalStmtMaker "ifGT" IfGreaterThan
-let ifGE = conditionalStmtMaker "ifGE" IfGreaterThanOrEquals
-let ifEQ = conditionalStmtMaker "ifEQ" IfEquals
-let ifLT = conditionalStmtMaker "ifLT" IfLesserThan
-let ifLE = conditionalStmtMaker "ifLE" IfLesserThanOrEquals
-
-let conditionalStmt =
-    choice [ ifGT; ifGE; ifEQ; ifLT; ifLE ]
-    |>> ConditionalStmt
-
-// Reaction statement parser
-let expression = sepBy speciesLiteral (symbol "+")
-
-let rxn =
-    symbol "rxn[" >>. expression .>> symbol ","
-    .>>. expression
-    .>> symbol ","
-    .>>. floatLiteral
-    .>> symbol "]"
-    |>> (fun ((a, b), c) -> a, b, c)
-    |>> Reaction
-
-let reactionStmt = rxn |>> ReactionStmt
-
-// Step parser
-let step =
-    symbol "step["
+    symbol id
+    >>. symbol "["
     >>. symbol "{"
     >>. many (
         command
         .>> (attempt skipComma <|> (symbol "}" |>> ignore))
     )
     .>> symbol "]"
-    |>> StepStmt
+    |>> stmt
+
+let ifGT = conditionalStmtMaker "ifGT" ConditionalStmt.IfGreaterThan
+let ifGE = conditionalStmtMaker "ifGE" ConditionalStmt.IfGreaterThanOrEquals
+let ifEQ = conditionalStmtMaker "ifEQ" ConditionalStmt.IfEquals
+let ifLT = conditionalStmtMaker "ifLT" ConditionalStmt.IfLesserThan
+let ifLE = conditionalStmtMaker "ifLE" ConditionalStmt.IfLesserThanOrEquals
+
+let conditionalStmt =
+    choice [ ifGT; ifGE; ifEQ; ifLT; ifLE ]
+    |>> Command.ConditionalStmt
+
+// Reaction statement parser
+let expression = sepBy1 speciesLiteral (symbol "+")
+
+let reactionStmt =
+    symbol "rxn" >>. symbol "[" >>. expression
+    .>> symbol ","
+    .>>. expression
+    .>> symbol ","
+    .>>. floatLiteral
+    .>> symbol "]"
+    |>> (fun ((a, b), c) -> a, b, c)
+    |>> Reaction
+    |>> ReactionStmt
+
+// Step parser
+let step =
+    symbol "step"
+    >>. symbol "["
+    >>. symbol "{"
+    >>. many (
+        command
+        .>> (attempt skipComma <|> (symbol "}" |>> ignore))
+    )
+    .>> symbol "]"
+    |>> Statement.StepStmt
 
 // Command parser, declare actual parser after all necessary parsers in between are defined
-commandRef.Value <-
-    (choice [ moduleStmt
-              conditionalStmt
-              reactionStmt ])
+commandRef.Value <- (moduleStmt <|> conditionalStmt <|> reactionStmt)
 
 // Statement parser
 let statement = (concentration <|> step)
