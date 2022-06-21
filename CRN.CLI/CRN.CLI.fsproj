@@ -9,8 +9,7 @@
         <AssemblyVersion>1.0.0</AssemblyVersion>
         <PackageVersion>1.0.0</PackageVersion>
         <Authors>Johannes Mols and Patrikas Balsys</Authors>
-        <AssemblyName>CRN++ Parser and Simulator</AssemblyName>
-        <LangVersion>6.0</LangVersion>
+        <AssemblyName>CRNPP</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>
