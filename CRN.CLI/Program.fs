@@ -67,11 +67,11 @@ let main args =
                         let args = Seq.zip opts.species opts.values |> Map.ofSeq
                         if opts.reaction then
                             let states = ReactionSimulator.simulate opts.precision opts.stepTime crn args
-                            printfn $"Successfully simulated {opts.take} states. Plotting them and opening it in the browser..."
+                            printfn $"Successfully simulated {opts.take} states using the reaction simulator. Plotting them and opening it in the browser..."
                             ReactionPlotter.plotReactionDefault opts.take states
                         else
                             let states = Simulator.simulate crn args |> Seq.take opts.take
-                            printfn $"Successfully simulated {opts.take} states using the reaction simulator. Plotting them and opening it in the browser..."
+                            printfn $"Successfully simulated {opts.take} states. Plotting them and opening it in the browser..."
                             Plotter.plot states
                     with
                     | e -> eprintfn $"Error: {e.Message}"
