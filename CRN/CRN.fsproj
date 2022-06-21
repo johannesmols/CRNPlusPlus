@@ -7,15 +7,6 @@
 
     <ItemGroup>
         <Compile Include="Program.fs" />
-        <None Include="Scripts\sequences.fsx" />
-        <None Include="Scripts\PlotlyExample.fsx" />
-        <Content Include="Scripts\examples\sequence.crnpp" />
-        <Content Include="Scripts\examples\oscillator.crnpp" />
-        <Content Include="Scripts\examples\multiplication.crnpp" />
-        <Content Include="Scripts\examples\counter.crnpp" />
-        <None Include="Scripts\ReactionParser.fsx" />
-        <None Include="Scripts\ReactionPlotter.fsx" />
-        <None Include="Scripts\ReactionSimulator.fsx" />
     </ItemGroup>
 
     <ItemGroup>
@@ -26,6 +17,10 @@
 
     <ItemGroup>
       <PackageReference Update="FSharp.Core" Version="6.0.5" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="Scripts\**" />
     </ItemGroup>
 
 </Project>

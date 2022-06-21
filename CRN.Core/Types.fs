@@ -54,3 +54,4 @@ module Simulator =
         member this.IsLesser = fst this.Comparison < snd this.Comparison - 0.5
         member this.IsGreaterOrEquals = this.IsEqual || this.IsGreater
         member this.IsLesserOrEquals = this.IsEqual || this.IsLesser
+        

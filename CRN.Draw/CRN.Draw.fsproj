@@ -8,6 +8,8 @@
     <ItemGroup>
         <Compile Include="Plotter.fsi" />
         <Compile Include="Plotter.fs" />
+        <Compile Include="ReactionPlotter.fsi" />
+        <Compile Include="ReactionPlotter.fs" />
     </ItemGroup>
 
     <ItemGroup>
