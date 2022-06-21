@@ -93,7 +93,7 @@ let simulateStep (state: State) (step: Statement) =
 
 let simulate crn (args: Map<string, float>) =
     if crn.Arguments.Length <> args.Count then
-        failwith $"Expected {crn.Arguments.Length} arguments, but received {args.Count}."
+        failwith $"Expected {crn.Arguments.Length} arguments (%A{crn.Arguments}), but received {args.Count}."
         
     let crn = replaceConcentrationsWithArguments crn args
     let initialState = constructInitialState crn

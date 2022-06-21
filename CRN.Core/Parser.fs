@@ -124,5 +124,5 @@ let programFull = ws >>. program .>> ws .>> eof
 // Parser for external use
 let parse input =
     match run programFull input with
-    | Success(res, _, _) -> analyze res
+    | Success(res, _, _) -> Result.Ok res
     | Failure(err, _, _) -> Result.Error err
