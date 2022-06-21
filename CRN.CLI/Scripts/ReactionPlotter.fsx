@@ -39,7 +39,7 @@ let plotReactionDefault stepCount crn args =
     let stepTime = 20
 
     simulate prec 20 crn args
-    |> Seq.take (stepTime * stepCount * int (1.0 / 0.001))
+    |> Seq.take (stepTime * stepCount * 1000)
     |> toCharts prec (stepTime * stepCount)
     |> Chart.combine
     |> Chart.show

@@ -274,19 +274,36 @@ let simulate prec stepTime crnpp args =
     | Result.Ok crn -> convertCRN crn |> reactionSeq prec stepTime args
     | Result.Error err -> failwith err
 
+// Generates reaction sequence from crnpp code using default parameters
+let simulateDefault stepCount crnpp args =
+    let prec = 0.001
+    let stepTime = 20
+    let result = parse crnpp
+
+    match result with
+    | Result.Ok crn ->
+        convertCRN crn
+        |> reactionSeq prec stepTime args
+        |> Seq.take (stepCount * stepTime * 1000)
+    | Result.Error err -> failwith err
+
+
 // --- Testing
 
-// let crnCou = File.ReadAllText "./CRN/Scripts/examples/counter.crnpp"
-// let crnDiv = File.ReadAllText "./CRN/Scripts/examples/division.crnpp"
-// let crnEul = File.ReadAllText "./CRN/Scripts/examples/euler.crnpp"
-// let crnFac = File.ReadAllText "./CRN/Scripts/examples/factorial.crnpp"
-// let crnGcd = File.ReadAllText "./CRN/Scripts/examples/gcd.crnpp"
-// let crnOsc = File.ReadAllText "./CRN/Scripts/examples/oscillator.crnpp"
-// let crnPi = File.ReadAllText "./CRN/Scripts/examples/pi.crnpp"
-// let crnSeq = File.ReadAllText "./CRN/Scripts/examples/sequence.crnpp"
-// let crnSqu = File.ReadAllText "./CRN/Scripts/examples/squareroot.crnpp"
-// let crnSub = File.ReadAllText "./CRN/Scripts/examples/subtract.crnpp"
+// let crnCou = File.ReadAllText "./CRN.CLI/Scripts/examples/counter.crnpp"
+// let crnDiv = File.ReadAllText "./CRN.CLI/Scripts/examples/division.crnpp"
+// let crnEul = File.ReadAllText "./CRN.CLI/Scripts/examples/euler.crnpp"
+// let crnFac = File.ReadAllText "./CRN.CLI/Scripts/examples/factorial.crnpp"
+let crnGcd = File.ReadAllText "./CRN.CLI/Scripts/examples/gcd.crnpp"
+// let crnOsc = File.ReadAllText "./CRN.CLI/Scripts/examples/oscillator.crnpp"
+// let crnPi = File.ReadAllText "./CRN.CLI/Scripts/examples/pi.crnpp"
+// let crnSeq = File.ReadAllText "./CRN.CLI/Scripts/examples/sequence.crnpp"
+// let crnSqu = File.ReadAllText "./CRN.CLI/Scripts/examples/squareroot.crnpp"
+// let crnSub = File.ReadAllText "./CRN.CLI/Scripts/examples/subtract.crnpp"
 
 // simulate 0.001 20 crnGcd (Map [ ("a0", 32); ("b0", 12) ])
 // |> Seq.take (60 * 1000)
 // |> Seq.toList
+
+simulateDefault 10 crnGcd (Map [ ("a0", 32); ("b0", 12) ])
+|> Seq.toList
