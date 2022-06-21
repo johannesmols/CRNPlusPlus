@@ -4,6 +4,13 @@
         <OutputType>Exe</OutputType>
         <TargetFramework>net6.0</TargetFramework>
         <RootNamespace>CRN</RootNamespace>
+        <Company>Johannes Mols and Patrikas Balsys</Company>
+        <Product>CRN++ Parser and Simulator</Product>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <PackageVersion>1.0.0</PackageVersion>
+        <Authors>Johannes Mols and Patrikas Balsys</Authors>
+        <AssemblyName>CRN++ Parser and Simulator</AssemblyName>
+        <LangVersion>6.0</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
