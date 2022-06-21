@@ -4,6 +4,12 @@ module CRN.Draw.ReactionPlotter
 
 open Plotly.NET
 
+// Takes every n'th value of a sequence, used to trim down the chart size
+let everyNth n sequence =
+    sequence
+    |> Seq.mapi (fun i e -> if i % n = n - 1 then Some(e) else None)
+    |> Seq.choose id
+
 // Constructs charts from a list of mapped values
 let rec toCharts' xs (values: list<Map<string, float>>) speciesList =
     match speciesList with
@@ -16,10 +22,11 @@ let rec toCharts' xs (values: list<Map<string, float>>) speciesList =
 
 // Constructs charts for all species in the reaction
 let toCharts prec maxTime (s: seq<Map<string, float>>) =
-    let values = Seq.toList s
+    let nth = int (1.0 / prec) / 10
+    let values = Seq.toList (everyNth nth s)
     let firstPoint = List.item 0 values
     let speciesList = Seq.toList (Map.keys firstPoint)
-    let xs = [ 0.0 .. (prec) .. float (maxTime) ]
+    let xs = [ 0.0 .. 0.1 .. float (maxTime) ]
     toCharts' xs values speciesList
 
 // Plots a reaction sequence
