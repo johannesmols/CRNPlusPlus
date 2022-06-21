@@ -290,9 +290,3 @@ let simulate prec stepTime crnpp args =
 // simulate 0.001 20 crnGcd (Map [ ("a0", 32); ("b0", 12) ])
 // |> Seq.take (60 * 1000)
 // |> Seq.toList
-
-// let crn1 = File.ReadAllText "./CRN/Scripts/examples/basic/mul.crnpp"
-
-// simulate 0.001 20 crn1 (Map [])
-// |> Seq.take (4 * 1)
-// |> Seq.toList

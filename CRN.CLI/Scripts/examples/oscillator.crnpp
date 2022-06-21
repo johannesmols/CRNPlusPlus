@@ -1,0 +1,14 @@
+crn = {
+conc[x1, 1],
+conc[x2, 1],
+conc[x3, 0.000001],
+step[{
+    rxn[x1+x2, x2+x2, 1]
+}],
+step[{
+    rxn[x2+x3, x3+x3, 1]
+}],
+step[{
+    rxn[x3+x1, x1+x1, 1]
+}]
+};

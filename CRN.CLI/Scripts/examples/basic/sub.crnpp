@@ -1,0 +1,8 @@
+crn = {
+conc[a, 6],
+conc[b, 4],
+conc[c, 0],
+step[{
+    sub[a, b, c]
+}]
+};

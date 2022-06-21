@@ -33,17 +33,28 @@ let plotReaction prec stepTime maxTime crn args =
     |> Chart.combine
     |> Chart.show
 
+// Plotting with default parameters, only need to define the number of steps
+let plotReactionDefault stepCount crn args =
+    let prec = 0.001
+    let stepTime = 20
+
+    simulate prec 20 crn args
+    |> Seq.take (stepTime * stepCount * int (1.0 / 0.001))
+    |> toCharts prec (stepTime * stepCount)
+    |> Chart.combine
+    |> Chart.show
+
 // --- Testing
 
-let crnCou = File.ReadAllText "./CRN/Scripts/examples/counter.crnpp"
-let crnDiv = File.ReadAllText "./CRN/Scripts/examples/division.crnpp"
-let crnEul = File.ReadAllText "./CRN/Scripts/examples/euler.crnpp"
-let crnFac = File.ReadAllText "./CRN/Scripts/examples/factorial.crnpp"
-let crnGcd = File.ReadAllText "./CRN/Scripts/examples/gcd.crnpp"
-let crnOsc = File.ReadAllText "./CRN/Scripts/examples/oscillator.crnpp"
-let crnPi = File.ReadAllText "./CRN/Scripts/examples/pi.crnpp"
-let crnSeq = File.ReadAllText "./CRN/Scripts/examples/sequence.crnpp"
-let crnSqu = File.ReadAllText "./CRN/Scripts/examples/squareroot.crnpp"
+let crnCou = File.ReadAllText "./CRN.CLI/Scripts/examples/counter.crnpp"
+let crnDiv = File.ReadAllText "./CRN.CLI/Scripts/examples/division.crnpp"
+let crnEul = File.ReadAllText "./CRN.CLI/Scripts/examples/euler.crnpp"
+let crnFac = File.ReadAllText "./CRN.CLI/Scripts/examples/factorial.crnpp"
+let crnGcd = File.ReadAllText "./CRN.CLI/Scripts/examples/gcd.crnpp"
+let crnOsc = File.ReadAllText "./CRN.CLI/Scripts/examples/oscillator.crnpp"
+let crnPi = File.ReadAllText "./CRN.CLI/Scripts/examples/pi.crnpp"
+let crnSeq = File.ReadAllText "./CRN.CLI/Scripts/examples/sequence.crnpp"
+let crnSqu = File.ReadAllText "./CRN.CLI/Scripts/examples/squareroot.crnpp"
 
 plotReaction 0.010 20 200 crnCou (Map [ ("a0", 3) ])
 plotReaction 0.010 20 500 crnDiv (Map [ ("a0", 20); ("b0", 3) ])
@@ -54,3 +65,5 @@ plotReaction 0.001 20 200 crnOsc (Map [])
 plotReaction 0.001 20 200 crnPi (Map [])
 plotReaction 0.010 20 200 crnSeq (Map [])
 plotReaction 0.010 20 200 crnSqu (Map [ ("n0", 10) ])
+
+plotReactionDefault 10 crnGcd (Map [ ("a0", 32); ("b0", 12) ])
