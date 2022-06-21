@@ -15,8 +15,8 @@ type State = {
 } with
     // TODO: Is 0.5 really a good margin? Relative margin might be better (see https://docs.microsoft.com/en-us/dotnet/api/system.double.equals?view=net-6.0)
     member this.IsEqual = abs(fst this.Comparison - snd this.Comparison) <= 0.5
-    member this.IsGreater = fst this.Comparison > snd this.Comparison
-    member this.IsLesser = fst this.Comparison < snd this.Comparison
+    member this.IsGreater = fst this.Comparison > snd this.Comparison + 0.5
+    member this.IsLesser = fst this.Comparison < snd this.Comparison - 0.5
     member this.IsGreaterOrEquals = this.IsEqual || this.IsGreater
     member this.IsLesserOrEquals = this.IsEqual || this.IsLesser
     
