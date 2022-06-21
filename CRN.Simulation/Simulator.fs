@@ -1,24 +1,14 @@
 ﻿// Johannes Mols, 15-06-2022
 
-module CRN.Core.Simulator
+module CRN.Simulation.Simulator
 
-open CRN.Core.Types
+open CRN.Core.Types.Parser
+open CRN.Core.Types.Simulator
 
 module Seq =
   /// Infinitely repeat a sequence of values
   let repeat items = 
     seq { while true do yield! items }
-
-type State = {
-    Concentrations : Map<string, float>
-    Comparison : float * float
-} with
-    member this.IsEqual = abs(fst this.Comparison - snd this.Comparison) <= 0.5
-    member this.IsGreater = fst this.Comparison > snd this.Comparison + 0.5
-    member this.IsLesser = fst this.Comparison < snd this.Comparison - 0.5
-    member this.IsGreaterOrEquals = this.IsEqual || this.IsGreater
-    member this.IsLesserOrEquals = this.IsEqual || this.IsLesser
-    
 
 /// Replace concentration statements where value is another species with actual values from the arguments
 let replaceConcentrationsWithArguments crn (args: Map<string, float>) =
@@ -101,7 +91,7 @@ let simulateStep (state: State) (step: Statement) =
     | ConcentrationStmt _ -> failwith "The statement must be a step statement."
     | StepStmt cmds -> simulate state cmds
 
-let interpret crn (args: Map<string, float>) =
+let simulate crn (args: Map<string, float>) =
     if crn.Arguments.Length <> args.Count then
         failwith $"Expected {crn.Arguments.Length} arguments, but received {args.Count}."
         

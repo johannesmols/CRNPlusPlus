@@ -21,6 +21,7 @@
     <ItemGroup>
       <ProjectReference Include="..\CRN.Core\CRN.Core.fsproj" />
       <ProjectReference Include="..\CRN.Draw\CRN.Draw.fsproj" />
+      <ProjectReference Include="..\CRN.Simulation\CRN.Simulation.fsproj" />
     </ItemGroup>
 
     <ItemGroup>

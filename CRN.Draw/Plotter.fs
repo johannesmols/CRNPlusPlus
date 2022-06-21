@@ -2,7 +2,7 @@
 
 module CRN.Draw.Plotter
 
-open CRN.Core.Simulator
+open CRN.Core.Types.Simulator
 
 open Plotly.NET
 

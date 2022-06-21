@@ -4,8 +4,8 @@ open System
 open System.IO
 
 open CRN.Core.Parser
-open CRN.Core.Simulator
-open CRN.Draw.Plotter
+open CRN.Simulation
+open CRN.Draw
 
 let argToVal (input: string) =
     let split = input.Split('=', 2) |> List.ofArray
@@ -41,12 +41,12 @@ let main args =
     | Ok crn ->
         if args.Length <> crn.Arguments.Length + 2 then
             failwith $"Parsed program expects values for the following species: %A{crn.Arguments}"
-        let allStates = interpret crn (args |> List.ofArray |> List.skip 2 |> List.map argToVal |> Map.ofList)
+        let allStates = Simulator.simulate crn (args |> List.ofArray |> List.skip 2 |> List.map argToVal |> Map.ofList)
         let stepsToEvaluate = args[1] |> int
         let states = allStates |> Seq.take stepsToEvaluate
         //states |> Seq.iteri (fun i s -> printfn $"State {i}: %A{s}")
         printfn $"Plotting {states |> Seq.length} states and displaying it in the browser..."
-        plot states
+        Plotter.plot states
         
     0
    

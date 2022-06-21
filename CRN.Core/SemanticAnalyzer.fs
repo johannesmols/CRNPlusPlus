@@ -2,7 +2,7 @@
 
 module CRN.Core.SemanticAnalyzer
 
-open CRN.Core.Types
+open CRN.Core.Types.Parser
 
 /// Extract only the step statements from a program
 let getStepStatements crn =

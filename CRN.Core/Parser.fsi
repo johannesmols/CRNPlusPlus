@@ -2,6 +2,6 @@
 
 module CRN.Core.Parser
 
-open CRN.Core.Types
+open CRN.Core.Types.Parser
 
 val parse : string -> Result<Crn, string>

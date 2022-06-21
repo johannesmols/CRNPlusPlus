@@ -3,7 +3,7 @@
 
 module CRN.Core.Parser
 
-open CRN.Core.Types
+open CRN.Core.Types.Parser
 open CRN.Core.SemanticAnalyzer
 
 open FParsec

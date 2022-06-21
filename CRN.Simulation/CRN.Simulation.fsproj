@@ -6,15 +6,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Types.fs" />
-        <Compile Include="SemanticAnalyzer.fsi" />
-        <Compile Include="SemanticAnalyzer.fs" />
-        <Compile Include="Parser.fsi" />
-        <Compile Include="Parser.fs" />
+        <Compile Include="Simulator.fsi" />
+        <Compile Include="Simulator.fs" />
+        <Compile Include="ReactionSimulator.fsi" />
+        <Compile Include="ReactionSimulator.fs" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="FParsec" Version="1.1.1" />
+      <ProjectReference Include="..\CRN.Core\CRN.Core.fsproj" />
+    </ItemGroup>
+
+    <ItemGroup>
       <PackageReference Update="FSharp.Core" Version="6.0.5" />
     </ItemGroup>
 

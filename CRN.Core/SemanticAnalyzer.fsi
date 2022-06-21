@@ -2,6 +2,6 @@
 
 module CRN.Core.SemanticAnalyzer
 
-open CRN.Core.Types
+open CRN.Core.Types.Parser
 
 val analyze : Crn -> Result<Crn, string>

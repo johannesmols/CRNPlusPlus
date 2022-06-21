@@ -2,6 +2,6 @@
 
 module CRN.Draw.Plotter
 
-open CRN.Core.Simulator
+open CRN.Core.Types.Simulator
 
 val plot : seq<State> -> unit
