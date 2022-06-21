@@ -9,7 +9,7 @@ let rec toCharts' xs (values: list<Map<string, float>>) speciesList =
     match speciesList with
     | [] -> []
     | species :: tail ->
-        let speciesSequence = List.map (fun m -> Map.find species m) values
+        let speciesSequence = List.map (Map.find species) values
 
         Chart.Line(xs, speciesSequence, Name = species)
         :: toCharts' xs values tail
@@ -27,5 +27,16 @@ let plotReaction prec maxTime states =
     states
     |> Seq.take (maxTime * int (1.0 / prec))
     |> toCharts prec maxTime
+    |> Chart.combine
+    |> Chart.show
+
+// Plotting with default parameters, only need to define the number of steps
+let plotReactionDefault stepCount states =
+    let prec = 0.001
+    let stepTime = 20
+
+    states
+    |> Seq.take (stepTime * stepCount * 1000)
+    |> toCharts prec (stepTime * stepCount)
     |> Chart.combine
     |> Chart.show

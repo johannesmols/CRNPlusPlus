@@ -3,3 +3,4 @@
 module CRN.Draw.ReactionPlotter
 
 val plotReaction : float -> int -> seq<Map<string, float>> -> unit
+val plotReactionDefault : int -> seq<Map<string, float>> -> unit
