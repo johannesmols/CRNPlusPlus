@@ -1,3 +1,6 @@
+// Johannes Mols, 15-06-2022: Entire parser
+// Patrikas Balsys, 20-06-2022: Added RXN statement parsing
+
 #r "nuget: FParsec"
 
 open FParsec

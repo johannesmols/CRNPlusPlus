@@ -1,3 +1,5 @@
+// Patrikas Balsys, 21-06-2022
+
 #load "./ReactionSimulator.fsx"
 #r "nuget: Plotly.NET, 2.0.0"
 
