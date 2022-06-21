@@ -6,20 +6,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="CRNPP\Types.fs" />
-        <Compile Include="CRNPP\SemanticAnalyzer.fsi" />
-        <Compile Include="CRNPP\SemanticAnalyzer.fs" />
-        <Compile Include="CRNPP\Parser.fsi" />
-        <Compile Include="CRNPP\Parser.fs" />
-        <Compile Include="CRNPP\Interpreter.fsi" />
-        <Compile Include="CRNPP\Interpreter.fs" />
-        <Compile Include="CRNPP\Plot.fsi" />
-        <Compile Include="CRNPP\Plot.fs" />
+        <Compile Include="Types.fs" />
+        <Compile Include="SemanticAnalyzer.fsi" />
+        <Compile Include="SemanticAnalyzer.fs" />
+        <Compile Include="Parser.fsi" />
+        <Compile Include="Parser.fs" />
+        <Compile Include="Simulator.fsi" />
+        <Compile Include="Simulator.fs" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="FParsec" Version="1.1.1" />
-      <PackageReference Include="Plotly.NET" Version="3.0.0" />
       <PackageReference Update="FSharp.Core" Version="6.0.5" />
     </ItemGroup>
 

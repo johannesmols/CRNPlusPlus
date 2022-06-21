@@ -1,8 +1,8 @@
 ﻿// Johannes Mols, 15-06-2022
 
-module CRN.Core.CRNPP.Plot
+module CRN.Draw.Plotter
 
-open CRN.Core.CRNPP.Interpreter
+open CRN.Core.Simulator
 
 open Plotly.NET
 

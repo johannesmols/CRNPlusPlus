@@ -1,10 +1,10 @@
 // Johannes Mols, 15-06-2022: Entire parser
 // Patrikas Balsys, 20-06-2022: Added RXN statement parsing
 
-module CRN.Core.CRNPP.Parser
+module CRN.Core.Parser
 
-open CRN.Core.CRNPP.Types
-open CRN.Core.CRNPP.SemanticAnalyzer
+open CRN.Core.Types
+open CRN.Core.SemanticAnalyzer
 
 open FParsec
 

@@ -1,8 +1,8 @@
 ﻿// Johannes Mols, 15-06-2022
 
-module CRN.Core.CRNPP.Interpreter
+module CRN.Core.Simulator
 
-open CRN.Core.CRNPP.Types
+open CRN.Core.Types
 
 module Seq =
   /// Infinitely repeat a sequence of values
@@ -13,7 +13,6 @@ type State = {
     Concentrations : Map<string, float>
     Comparison : float * float
 } with
-    // TODO: Is 0.5 really a good margin? Relative margin might be better (see https://docs.microsoft.com/en-us/dotnet/api/system.double.equals?view=net-6.0)
     member this.IsEqual = abs(fst this.Comparison - snd this.Comparison) <= 0.5
     member this.IsGreater = fst this.Comparison > snd this.Comparison + 0.5
     member this.IsLesser = fst this.Comparison < snd this.Comparison - 0.5

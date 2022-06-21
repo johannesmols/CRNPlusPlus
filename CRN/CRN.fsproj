@@ -20,6 +20,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\CRN.Core\CRN.Core.fsproj" />
+      <ProjectReference Include="..\CRN.Draw\CRN.Draw.fsproj" />
     </ItemGroup>
 
     <ItemGroup>

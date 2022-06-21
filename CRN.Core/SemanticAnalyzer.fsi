@@ -1,7 +1,7 @@
 ﻿// Johannes Mols, 15-06-2022
 
-module CRN.Core.CRNPP.SemanticAnalyzer
+module CRN.Core.SemanticAnalyzer
 
-open CRN.Core.CRNPP.Types
+open CRN.Core.Types
 
 val analyze : Crn -> Result<Crn, string>

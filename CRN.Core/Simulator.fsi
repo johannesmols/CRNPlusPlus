@@ -1,8 +1,8 @@
 ﻿// Johannes Mols, 15-06-2022
 
-module CRN.Core.CRNPP.Interpreter
+module CRN.Core.Simulator
 
-open CRN.Core.CRNPP.Types
+open CRN.Core.Types
 
 type State = {
     Concentrations : Map<string, float>

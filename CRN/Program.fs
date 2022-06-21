@@ -3,9 +3,9 @@
 open System
 open System.IO
 
-open CRN.Core.CRNPP
-open CRN.Core.CRNPP.Parser
-open CRN.Core.CRNPP.Interpreter
+open CRN.Core.Parser
+open CRN.Core.Simulator
+open CRN.Draw.Plotter
 
 let argToVal (input: string) =
     let split = input.Split('=', 2) |> List.ofArray
@@ -46,7 +46,7 @@ let main args =
         let states = allStates |> Seq.take stepsToEvaluate
         //states |> Seq.iteri (fun i s -> printfn $"State {i}: %A{s}")
         printfn $"Plotting {states |> Seq.length} states and displaying it in the browser..."
-        Plot.plot states
+        plot states
         
     0
    

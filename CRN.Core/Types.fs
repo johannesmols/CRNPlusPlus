@@ -1,7 +1,7 @@
 ﻿// Johannes Mols, 15-06-2022
 // Patrikas Balsys, 20-06-2022: Added reaction statements
 
-module CRN.Core.CRNPP.Types
+module CRN.Core.Types
 
 type Literal =
     | SpeciesLiteral of string
