@@ -3,16 +3,7 @@
 module CRN.Simulation.ReactionSimulator
 
 open CRN.Core.Types.Parser
-
-//* New type declarations interpretation
-
-// Reaction: reactants, products, reaction rate
-type Rxn = Rxn of string list * string list * float
-// Comparison statement: species, species
-type Cmp = Cmp of string * string
-// Step: default Rxns, IfGT Rxns, IfGE Rxns, IfEQ Rxns, IfLT Rxns, IfLE Rxns, Cmp
-type Step = Step of Rxn list * Rxn list * Rxn list * Rxn list * Rxn list * Rxn list * Option<Cmp>
-
+open CRN.Core.Types.ReactionSimulator
 
 //* Conversion statements
 

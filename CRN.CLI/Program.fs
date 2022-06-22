@@ -13,6 +13,7 @@ open CommandLine
 [<Verb("parse", HelpText = "Only parse a program, do not simulate it.")>]
 type OnlyParseOptions = {
     [<Option('f', "file", Required = true, HelpText = "The path and file name of the input CRN++ program")>] file : string
+    [<Option('c', "convert", Required = false, HelpText = "Convert the parsed program to a Chemical Reaction Network")>] convert : bool
     [<Option('a', "analyze", Required = false, HelpText = "Also analyze the parsed program for semantic errors")>] analyze : bool
 }
 
@@ -49,7 +50,12 @@ let main args =
             let parseRes = parseProgramFromFile opts.file
             match parseRes with
             | Ok crn ->
-                printfn $"%A{crn}"
+                printfn $"Parsed program:{Environment.NewLine}%A{crn}{Environment.NewLine}"
+                
+                if opts.convert then
+                    let converted = ReactionSimulator.convertCRN crn
+                    printfn $"Converted to chemical reaction network: %A{converted}{Environment.NewLine}"
+                
                 if opts.analyze then
                     let analyzed = SemanticAnalyzer.analyze crn
                     match analyzed with

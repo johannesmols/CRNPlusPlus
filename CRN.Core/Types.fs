@@ -1,5 +1,5 @@
 ﻿// Johannes Mols, 15-06-2022
-// Patrikas Balsys, 20-06-2022: Added reaction statements
+// Patrikas Balsys, 20-06-2022: Added reaction statements and types
 
 module CRN.Core.Types
 
@@ -54,4 +54,12 @@ module Simulator =
         member this.IsLesser = fst this.Comparison < snd this.Comparison - 0.5
         member this.IsGreaterOrEquals = this.IsEqual || this.IsGreater
         member this.IsLesserOrEquals = this.IsEqual || this.IsLesser
+        
+module ReactionSimulator =
+    // Reaction: reactants, products, reaction rate
+    type Rxn = Rxn of string list * string list * float
+    // Comparison statement: species, species
+    type Cmp = Cmp of string * string
+    // Step: default Rxns, IfGT Rxns, IfGE Rxns, IfEQ Rxns, IfLT Rxns, IfLE Rxns, Cmp
+    type Step = Step of Rxn list * Rxn list * Rxn list * Rxn list * Rxn list * Rxn list * Option<Cmp>
         
