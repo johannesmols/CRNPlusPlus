@@ -84,7 +84,7 @@ let simulateStep (state: State) (step: Statement) =
                 match cmd with
                 | ModuleStmt m -> moduleStmt state m
                 | ConditionalStmt c -> conditionalStmt state c
-                | ReactionStmt _ -> failwith "This interpreter does not support reaction statements. Please use the other one."
+                | ReactionStmt _ -> failwith "This interpreter does not support reaction statements. Please use the reaction simulator instead."
             simulate newState rem
     
     match step with

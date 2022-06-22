@@ -2,6 +2,7 @@
 
 open CRN.Core
 open CRN.Core.Parser
+open CRN.Core.Types
 open CRN.Simulation
 open CRN.Draw
 
@@ -20,12 +21,10 @@ type OnlyParseOptions = {
 [<Verb("simulate", HelpText = "Parse a program, simulate it, and draw a chart with the results.")>]
 type SimulatorOptions = {
     [<Option('f', "file", Required = true, HelpText = "The path and file name of the input CRN++ program")>] file : string
-    [<Option('t', "take", Required = true, HelpText = "How many steps to simulate")>] take : int
+    [<Option('t', "take", Required = true, HelpText = "How many steps of the CRN++ program to simulate")>] take : int
     [<Option('s', "species", Required = false, HelpText = "Missing species")>] species : string seq
     [<Option('v', "values", Required = false, HelpText = "Values for missing species")>] values : float seq
-    [<Option('r', "reaction", Required = false, HelpText = "Use the reaction simulator instead of the regular one (requires precision and step time arguments)")>] reaction : bool
-    [<Option('p', "precision", Required = false, HelpText = "Precision of reaction simulator")>] precision : float
-    [<Option('e', "step time", Required = false, HelpText = "Step time of reaction simulator")>] stepTime : int
+    [<Option('r', "reaction", Required = false, HelpText = "Use the reaction simulator instead of the default simulator")>] reaction : bool
 }
 
 /// Parse a CRN++ program from file on disk
@@ -72,7 +71,7 @@ let main args =
                     try
                         let args = Seq.zip opts.species opts.values |> Map.ofSeq
                         if opts.reaction then
-                            let states = ReactionSimulator.simulate opts.precision opts.stepTime crn args
+                            let states = ReactionSimulator.simulate ReactionSimulator.defaultPrecision ReactionSimulator.defaultStepTime crn args
                             printfn $"Successfully simulated {opts.take} states using the reaction simulator. Plotting them and opening it in the browser..."
                             ReactionPlotter.plotReactionDefault opts.take states
                         else

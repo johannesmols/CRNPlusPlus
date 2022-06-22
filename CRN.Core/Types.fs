@@ -56,6 +56,9 @@ module Simulator =
         member this.IsLesserOrEquals = this.IsEqual || this.IsLesser
         
 module ReactionSimulator =
+    let defaultPrecision = 0.001
+    let defaultStepTime = 20
+    
     // Reaction: reactants, products, reaction rate
     type Rxn = Rxn of string list * string list * float
     // Comparison statement: species, species

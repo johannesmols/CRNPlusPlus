@@ -2,6 +2,7 @@
 
 module CRN.Draw.ReactionPlotter
 
+open CRN.Core.Types
 open Plotly.NET
 
 // Takes every n'th value of a sequence, used to trim down the chart size
@@ -39,11 +40,8 @@ let plotReaction prec maxTime states =
 
 // Plotting with default parameters, only need to define the number of steps
 let plotReactionDefault stepCount states =
-    let prec = 0.001
-    let stepTime = 20
-
     states
-    |> Seq.take (stepTime * stepCount * 1000)
-    |> toCharts prec (stepTime * stepCount)
+    |> Seq.take (ReactionSimulator.defaultStepTime * stepCount * 1000)
+    |> toCharts ReactionSimulator.defaultPrecision (ReactionSimulator.defaultStepTime * stepCount)
     |> Chart.combine
     |> Chart.show
