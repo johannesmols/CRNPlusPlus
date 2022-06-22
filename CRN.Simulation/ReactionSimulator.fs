@@ -239,19 +239,17 @@ let reactionSeq prec stepTime args (cons, steps: list<Step>) =
 
         let newState =
             if isNextStep then
-                { StepCounter = rs.StepCounter + 1
-                  Precision = prec
-                  Reactions = getReactions rs nextStep
-                  Compare = getCmp nextStep rs.Compare
-                  Derivatives = calculateDerivatives values rs.Reactions allSpecies
-                  Values = values }
+                { rs with
+                    StepCounter = rs.StepCounter + 1
+                    Reactions = getReactions rs nextStep
+                    Compare = getCmp nextStep rs.Compare
+                    Derivatives = calculateDerivatives values rs.Reactions allSpecies
+                    Values = values }
             else
-                { StepCounter = rs.StepCounter + 1
-                  Precision = prec
-                  Reactions = rs.Reactions
-                  Compare = rs.Compare
-                  Derivatives = calculateDerivatives values rs.Reactions allSpecies
-                  Values = values }
+                { rs with
+                    StepCounter = rs.StepCounter + 1
+                    Derivatives = calculateDerivatives values rs.Reactions allSpecies
+                    Values = values }
 
         Some(rs.Values, newState))
 
