@@ -6,8 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Simulator.fsi" />
-        <Compile Include="Simulator.fs" />
+        <Compile Include="DiscreteSimulator.fsi" />
+        <Compile Include="DiscreteSimulator.fs" />
         <Compile Include="ReactionSimulator.fsi" />
         <Compile Include="ReactionSimulator.fs" />
     </ItemGroup>

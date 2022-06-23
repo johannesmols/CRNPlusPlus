@@ -75,9 +75,9 @@ let main args =
                             printfn $"Successfully simulated {opts.take} states using the reaction simulator. Plotting them and opening it in the browser..."
                             ReactionPlotter.plotReactionDefault opts.take states
                         else
-                            let states = Simulator.simulate crn args |> Seq.take opts.take
+                            let states = DiscreteSimulator.simulate crn args |> Seq.take opts.take
                             printfn $"Successfully simulated {opts.take} states. Plotting them and opening it in the browser..."
-                            Plotter.plot states
+                            DiscretePlotter.plot states
                     with
                     | e -> eprintfn $"Error: {e.Message}"
                 | Error err -> eprintfn $"The parsed program has a semantic issue: {err}"

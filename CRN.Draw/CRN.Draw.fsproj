@@ -6,8 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Plotter.fsi" />
-        <Compile Include="Plotter.fs" />
+        <Compile Include="DiscretePlotter.fsi" />
+        <Compile Include="DiscretePlotter.fs" />
         <Compile Include="ReactionPlotter.fsi" />
         <Compile Include="ReactionPlotter.fs" />
     </ItemGroup>

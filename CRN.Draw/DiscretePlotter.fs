@@ -1,6 +1,6 @@
 ﻿// Johannes Mols, 15-06-2022
 
-module CRN.Draw.Plotter
+module CRN.Draw.DiscretePlotter
 
 open CRN.Core.Types.Simulator
 
